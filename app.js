@@ -68,7 +68,11 @@
   }
 
   // ---------- render ----------
-  function render(){ renderHeader(); renderChips(); renderToday(); renderStats(); renderHistory(); }
+  function render(){
+    // Pick the default exercise first: the header and the log button depend on it.
+    if (!state.ex || !state.exercises.includes(state.ex)) state.ex = state.exercises[0] || null;
+    renderHeader(); renderChips(); renderToday(); renderStats(); renderHistory();
+  }
   function renderHeader(){
     const k = todayKey();
     $('todayDate').textContent = fmtDate(k);
@@ -79,7 +83,6 @@
     $('log').disabled = !state.ex;
   }
   function renderChips(){
-    if (!state.ex || !state.exercises.includes(state.ex)) state.ex = state.exercises[0] || null;
     const c = $('chips'); c.innerHTML = '';
     for (const ex of state.exercises) {
       const b = document.createElement('button');
