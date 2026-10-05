@@ -1,17 +1,17 @@
 (function(){
   const $ = id => document.getElementById(id);
   const WD = ['日','一','二','三','四','五','六'];
-  const DEFAULT_EX = ['單槓'];
+  const DEFAULT_EX = ['單槓', '伏地挺身'];
   const QUICK = [5, 8, 10, 12, 15, 20];
   const KEY = 'workoutlog.v1';
 
   const state = {
     exercises: DEFAULT_EX.slice(),
-    days: {},            // date -> {date, sets:[{id, ex, reps, t}]}
-    ex: null, range: 'week', armed: null,
+    days: {},            // date -> {date, sets:[{id, ex, reps, t, w?}]}
+    loads: {},           // exercise -> last load used
+    ex: null, range: 'week',
     storageOk: true, exportName: '', exportMime: 'application/json',
   };
-  let armTimer = null;
 
   // ---------- helpers ----------
   function pad(n){ return String(n).padStart(2,'0'); }
@@ -29,7 +29,13 @@
   }
   let toastTimer;
   function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove('show'), 1800); }
-  function currentReps(){ let v = parseInt($('reps').value, 10); if (!v || v < 1) v = 1; if (v > 999) v = 999; return v; }
+  function clampReps(raw){ let v = parseInt(raw, 10); if (!v || v < 1) v = 1; if (v > 999) v = 999; return v; }
+  function currentReps(){ return clampReps($('reps').value); }
+  // Load is signed kg on the set: w > 0 加重, w < 0 拉力帶, no w = 徒手.
+  function cleanW(v){ const n = Math.round(Number(v) * 10) / 10; return Number.isFinite(n) ? Math.max(-999, Math.min(999, n)) : 0; }
+  function loadLabel(w){ return w > 0 ? '+' + w + 'kg' : w < 0 ? '帶' + (-w) + 'kg' : ''; }
+  function makeSet(id, ex, reps, w, t){ const s = { id, ex, reps, t }; if (w) s.w = w; return s; }
+  function fmtTime(t){ const d = new Date(t); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
   function groupByEx(sets){
     const m = new Map();
     for (const s of sets) { if (!m.has(s.ex)) m.set(s.ex, []); m.get(s.ex).push(s); }
@@ -38,7 +44,7 @@
   function cleanSets(list){
     if (!Array.isArray(list)) return [];
     return list.filter(s => s && s.ex && Number(s.reps) > 0)
-      .map(s => ({ id: String(s.id || uid()), ex: String(s.ex).slice(0,20), reps: Math.min(999, Math.round(Number(s.reps))), t: Number(s.t) || 0 }));
+      .map(s => makeSet(String(s.id || uid()), String(s.ex).slice(0,20), Math.min(999, Math.round(Number(s.reps))), cleanW(s.w), Number(s.t) || 0));
   }
 
   // ---------- storage (this device only) ----------
@@ -53,12 +59,13 @@
       if (d.days && typeof d.days === 'object') {
         for (const k in d.days) if (/^\d{4}-\d{2}-\d{2}$/.test(k)) state.days[k] = { date: k, sets: cleanSets(d.days[k].sets) };
       }
+      if (d.loads && typeof d.loads === 'object') for (const ex in d.loads) state.loads[ex] = cleanW(d.loads[ex]);
       if (d.lastEx) state.ex = String(d.lastEx);
       if (Number(d.lastReps) > 0) $('reps').value = Math.min(999, Number(d.lastReps));
     } catch(e){ console.error(e); }
   }
   function persist(){
-    const payload = { version: 1, exercises: state.exercises, days: state.days, lastEx: state.ex, lastReps: currentReps() };
+    const payload = { version: 2, exercises: state.exercises, days: state.days, loads: state.loads, lastEx: state.ex, lastReps: currentReps() };
     try { localStorage.setItem(KEY, JSON.stringify(payload)); }
     catch(e){ state.storageOk = false; showStorageNotice(); }
   }
@@ -71,6 +78,7 @@
   function render(){
     // Pick the default exercise first: the header and the log button depend on it.
     if (!state.ex || !state.exercises.includes(state.ex)) state.ex = state.exercises[0] || null;
+    mainLoad.set(cleanW(state.loads[state.ex]));
     renderHeader(); renderChips(); renderToday(); renderStats(); renderHistory();
   }
   function renderHeader(){
@@ -94,21 +102,18 @@
     add.className = 'chip add'; add.textContent = state.exercises.length ? '編輯' : '＋ 新增動作';
     add.onclick = openSheet; c.appendChild(add);
   }
-  function dayRows(container, key, editable){
+  function dayRows(container, key){
     const sets = (state.days[key] || {sets:[]}).sets;
     for (const [ex, list] of groupByEx(sets)) {
       const row = document.createElement('div'); row.className = 'row';
       const name = document.createElement('div'); name.className = 'ex'; name.textContent = ex;
       const chips = document.createElement('div'); chips.className = 'sets';
       for (const s of list) {
-        const el = document.createElement(editable ? 'button' : 'span');
-        const armed = editable && state.armed === s.id;
-        el.className = 'set num' + (armed ? ' armed' : '');
-        el.textContent = armed ? '刪除' : s.reps;
-        if (editable) {
-          el.setAttribute('aria-label', armed ? '確認刪除這組' : s.reps + ' 下，點一下可刪除');
-          el.onclick = (e) => { e.stopPropagation(); if (armed) removeSet(key, s.id); else arm(s.id); };
-        }
+        const el = document.createElement('button');
+        el.className = 'set num'; el.textContent = s.reps;
+        if (s.w) { const sm = document.createElement('small'); sm.textContent = loadLabel(s.w); el.appendChild(sm); }
+        el.setAttribute('aria-label', s.reps + ' 下' + (s.w ? ' ' + loadLabel(s.w) : '') + '，點一下可修改');
+        el.onclick = () => openEdit(key, s.id);
         chips.appendChild(el);
       }
       const tot = document.createElement('div'); tot.className = 'tot num';
@@ -121,7 +126,7 @@
     const sets = (state.days[k] || {sets:[]}).sets;
     const has = sets.length > 0;
     box.style.display = has ? '' : 'none'; $('todayEmpty').style.display = has ? 'none' : '';
-    if (has) dayRows(box, k, true);
+    if (has) dayRows(box, k);
   }
   function renderStats(){
     const start = rangeStart();
@@ -129,8 +134,9 @@
     for (const k in state.days) {
       if (k < start) continue;
       for (const s of state.days[k].sets) {
-        if (!agg.has(s.ex)) agg.set(s.ex, {total:0, sets:0, days:new Set()});
+        if (!agg.has(s.ex)) agg.set(s.ex, {total:0, sets:0, days:new Set(), max:0});
         const a = agg.get(s.ex); a.total += s.reps; a.sets++; a.days.add(k);
+        if (s.w > a.max) a.max = s.w;
       }
     }
     const box = $('statRows'); box.innerHTML = '';
@@ -144,6 +150,7 @@
         + '<div class="v num">' + a.sets + '<small>組</small></div>'
         + '<div class="v num">' + a.days.size + '<small>天</small></div>';
       r.querySelector('.ex').textContent = ex;
+      if (a.max) { const sm = document.createElement('small'); sm.textContent = '最重 ' + loadLabel(a.max); r.querySelector('.ex').appendChild(sm); }
       box.appendChild(r);
     }
     const b = $('bars'); b.innerHTML = '';
@@ -179,14 +186,11 @@
       const head = document.createElement('div'); head.className = 'head';
       head.innerHTML = '<b></b><span><span class="num">' + sum(sets.map(s=>s.reps)) + '</span> 下 · ' + sets.length + ' 組</span>';
       head.querySelector('b').textContent = fmtDate(k);
-      d.appendChild(head); dayRows(d, k, false); h.appendChild(d);
+      d.appendChild(head); dayRows(d, k); h.appendChild(d);
     }
   }
 
   // ---------- actions ----------
-  function arm(id){ state.armed = id; renderToday(); clearTimeout(armTimer); armTimer = setTimeout(()=>{ state.armed = null; renderToday(); }, 3000); }
-  document.addEventListener('click', () => { if (state.armed) { state.armed = null; renderToday(); } });
-
   function setReps(v){ $('reps').value = v; persist(); }
   function saveDay(key, sets){
     if (sets.length) state.days[key] = { date: key, sets }; else delete state.days[key];
@@ -195,16 +199,61 @@
   function addSet(){
     if (!state.ex) return;
     const key = todayKey(); const reps = currentReps(); $('reps').value = reps;
-    const sets = ((state.days[key] || {sets:[]}).sets).concat([{ id: uid(), ex: state.ex, reps, t: Date.now() }]);
+    const w = mainLoad.get(); state.loads[state.ex] = w;
+    const sets = ((state.days[key] || {sets:[]}).sets).concat([makeSet(uid(), state.ex, reps, w, Date.now())]);
     saveDay(key, sets);
     const b = $('log'); b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
-    toast(state.ex + ' ' + reps + ' 下，記好了');
+    toast(state.ex + ' ' + reps + ' 下' + (w ? '（' + loadLabel(w) + '）' : '') + '，記好了');
   }
   function removeSet(key, id){
-    state.armed = null;
     saveDay(key, ((state.days[key] || {sets:[]}).sets).filter(s => s.id !== id));
     toast('刪掉了');
   }
+
+  // ---------- load picker (徒手 / 加重 / 拉力帶), used by the counter and the edit sheet ----------
+  function loadPicker(root, kgInput, onChange){
+    let mode = 'body';
+    function show(){
+      for (const b of root.querySelectorAll('button[data-m]')) b.classList.toggle('on', b.dataset.m === mode);
+      kgInput.parentElement.style.display = mode === 'body' ? 'none' : '';
+    }
+    root.addEventListener('click', e => {
+      const b = e.target.closest('button[data-m]'); if (!b) return;
+      mode = b.dataset.m; show();
+      if (mode !== 'body' && !kgInput.value) kgInput.focus();
+      if (onChange) onChange();
+    });
+    kgInput.addEventListener('input', () => { if (onChange) onChange(); });
+    kgInput.addEventListener('focus', () => kgInput.select());
+    return {
+      get(){ if (mode === 'body') return 0; const kg = Math.abs(cleanW(kgInput.value)); return mode === 'band' ? -kg : kg; },
+      set(w){ mode = w > 0 ? 'add' : w < 0 ? 'band' : 'body'; kgInput.value = w ? Math.abs(w) : ''; show(); },
+    };
+  }
+  const mainLoad = loadPicker($('load'), $('kg'), () => { if (state.ex) { state.loads[state.ex] = mainLoad.get(); persist(); } });
+  const editLoad = loadPicker($('editLoad'), $('editKg'));
+
+  // ---------- edit sheet ----------
+  let editing = null;  // {key, id} of the set being edited
+  function openEdit(key, id){
+    const s = (state.days[key] || {sets:[]}).sets.find(x => x.id === id); if (!s) return;
+    editing = { key, id };
+    $('editTitle').textContent = s.ex;
+    $('editWhen').textContent = fmtDate(key) + (s.t ? ' ' + fmtTime(s.t) : '');
+    $('editReps').value = s.reps; editLoad.set(s.w || 0);
+    $('editSheet').classList.add('open');
+  }
+  $('editMinus').onclick = () => { $('editReps').value = Math.max(1, clampReps($('editReps').value)-1); };
+  $('editPlus').onclick = () => { $('editReps').value = Math.min(999, clampReps($('editReps').value)+1); };
+  $('editReps').addEventListener('focus', e => e.target.select());
+  $('editCancel').onclick = () => closeSheet('editSheet');
+  $('editSave').onclick = () => {
+    const { key, id } = editing; const reps = clampReps($('editReps').value), w = editLoad.get();
+    closeSheet('editSheet');
+    saveDay(key, state.days[key].sets.map(s => s.id === id ? makeSet(s.id, s.ex, reps, w, s.t) : s));
+    toast('改好了');
+  };
+  $('editDelete').onclick = () => { closeSheet('editSheet'); removeSet(editing.key, editing.id); };
 
   // ---------- exercise sheet ----------
   function exRow(val){
@@ -229,20 +278,20 @@
     if (!list.length) { toast('至少留一個動作'); return; }
     closeSheet('sheet'); state.exercises = list; persist(); render();
   };
-  for (const id of ['sheet','exportSheet','importSheet','clearSheet']) {
+  for (const id of ['sheet','editSheet','exportSheet','importSheet','clearSheet']) {
     $(id).addEventListener('click', e => { if (e.target === $(id)) closeSheet(id); });
   }
 
   // ---------- export / import ----------
   function backupJson(){
-    return JSON.stringify({ app: 'workoutlog', version: 1, exportedAt: new Date().toISOString(), exercises: state.exercises, days: state.days }, null, 1);
+    return JSON.stringify({ app: 'workoutlog', version: 2, exportedAt: new Date().toISOString(), exercises: state.exercises, days: state.days }, null, 1);
   }
   function backupCsv(){
-    const rows = [['日期','動作','次數','時間']];
+    const rows = [['日期','動作','次數','負重','公斤','時間']];
     for (const k of Object.keys(state.days).sort()) {
       for (const s of state.days[k].sets) {
-        const t = s.t ? new Date(s.t) : null;
-        rows.push([k, s.ex, s.reps, t ? pad(t.getHours()) + ':' + pad(t.getMinutes()) : '']);
+        const kind = s.w > 0 ? '加重' : s.w < 0 ? '拉力帶' : '徒手';
+        rows.push([k, s.ex, s.reps, kind, s.w ? Math.abs(s.w) : '', s.t ? fmtTime(s.t) : '']);
       }
     }
     return '\ufeff' + rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\r\n');
@@ -324,7 +373,7 @@
   $('clearAll').onclick = () => $('clearSheet').classList.add('open');
   $('clearCancel').onclick = () => closeSheet('clearSheet');
   $('clearGo').onclick = () => {
-    state.days = {}; state.exercises = DEFAULT_EX.slice(); state.ex = null;
+    state.days = {}; state.exercises = DEFAULT_EX.slice(); state.loads = {}; state.ex = null;
     try { localStorage.removeItem(KEY); } catch(e) {}
     closeSheet('clearSheet'); render(); toast('已清除');
   };

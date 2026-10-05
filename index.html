@@ -6,7 +6,7 @@
 <title>運動紀錄</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1">
+<link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 <div class="wrap">
@@ -26,6 +26,14 @@
       <button class="step" id="plus" aria-label="加一下">＋</button>
     </div>
     <div class="unit">這組幾下</div>
+    <div class="load" id="load">
+      <div class="seg" role="group" aria-label="負重">
+        <button data-m="body" class="on">徒手</button>
+        <button data-m="add">加重</button>
+        <button data-m="band">拉力帶</button>
+      </div>
+      <label class="kg" style="display:none"><input class="num" id="kg" type="number" inputmode="decimal" min="0" max="999" step="0.5" aria-label="公斤">kg</label>
+    </div>
     <div class="quick" id="quick"></div>
     <button class="log" id="log">記一組</button>
   </section>
@@ -78,6 +86,31 @@
   </div>
 </div>
 
+<div class="sheet" id="editSheet">
+  <div class="panel" role="dialog" aria-label="修改這組">
+    <h3 id="editTitle">修改這組</h3>
+    <p id="editWhen"></p>
+    <div class="stepper">
+      <button class="step" id="editMinus" aria-label="減一下">−</button>
+      <input class="num reps" id="editReps" type="number" inputmode="numeric" min="1" max="999" aria-label="這組幾下">
+      <button class="step" id="editPlus" aria-label="加一下">＋</button>
+    </div>
+    <div class="load" id="editLoad">
+      <div class="seg" role="group" aria-label="負重">
+        <button data-m="body">徒手</button>
+        <button data-m="add">加重</button>
+        <button data-m="band">拉力帶</button>
+      </div>
+      <label class="kg" style="display:none"><input class="num" id="editKg" type="number" inputmode="decimal" min="0" max="999" step="0.5" aria-label="公斤">kg</label>
+    </div>
+    <div class="actions">
+      <button class="danger" id="editDelete">刪除</button>
+      <button id="editCancel">取消</button>
+      <button class="primary" id="editSave">儲存</button>
+    </div>
+  </div>
+</div>
+
 <div class="sheet" id="exportSheet">
   <div class="panel" role="dialog" aria-label="匯出">
     <h3 id="exportTitle">匯出</h3>
@@ -118,6 +151,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="app.js?v=1"></script>
+<script src="app.js?v=2"></script>
 </body>
 </html>

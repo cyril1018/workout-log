@@ -1,4 +1,24 @@
+# Dependencies
 node_modules/
-.playwright-mcp/
+
+# Playwright output
 test-results/
 playwright-report/
+blob-report/
+playwright/.cache/
+.playwright-mcp/
+
+# Local secrets / env (none today; keep them out if ever added)
+.env
+.env.*
+*.pem
+*.key
+
+# Editor, OS and tool-local files
+.claude/settings.local.json
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log

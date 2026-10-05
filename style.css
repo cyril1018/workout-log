@@ -48,6 +48,12 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .reps{width:100%;border:0;background:transparent;text-align:center;color:var(--ink);font-size:84px;line-height:1;padding:0;margin:0;-moz-appearance:textfield}
 .reps::-webkit-outer-spin-button,.reps::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .unit{text-align:center;color:var(--muted);font-size:14px;margin-top:-4px}
+.load{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.load .seg{margin-bottom:0}
+.kg{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:15px}
+.kg input{width:76px;height:38px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);text-align:center;font-size:22px;padding:0 6px;-moz-appearance:textfield}
+.kg input::-webkit-outer-spin-button,.kg input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.panel .reps{font-size:60px}
 .quick{display:flex;gap:8px;justify-content:center;margin:12px 0 14px;flex-wrap:wrap}
 .quick button{min-width:46px;height:38px;padding:0 10px;border-radius:12px;background:var(--chip);font-size:17px}
 .log{width:100%;height:58px;border-radius:16px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:19px}
@@ -69,7 +75,7 @@ h2{font-size:14px;font-weight:700;color:var(--muted);margin:0 0 8px 2px}
 .row .ex{font-weight:500;font-size:15px}
 .row .sets{display:flex;flex-wrap:wrap;gap:6px}
 .set{height:32px;min-width:36px;padding:0 10px;border-radius:10px;background:var(--chip);font-size:19px;display:inline-flex;align-items:center;justify-content:center}
-.set.armed{background:var(--danger);color:var(--danger-ink);font-family:"Noto Sans TC",sans-serif;font-weight:700;font-size:14px}
+.set small{font-family:"Noto Sans TC",sans-serif;font-weight:500;font-size:12px;color:var(--muted);margin-left:4px}
 .row .tot{font-size:22px;color:var(--ink);line-height:1}
 .row .tot small{font-family:"Noto Sans TC",sans-serif;font-weight:400;font-size:13px;color:var(--muted);margin-left:2px}
 .empty{color:var(--muted);font-size:15px;padding:6px 2px}
@@ -81,6 +87,7 @@ h2{font-size:14px;font-weight:700;color:var(--muted);margin:0 0 8px 2px}
 .srow{display:grid;grid-template-columns:1fr auto auto auto;gap:14px;align-items:baseline;padding:10px 0;border-top:1px solid var(--line)}
 .srow:first-child{border-top:0}
 .srow .ex{font-weight:500}
+.srow .ex small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
 .srow .v{text-align:right;font-size:24px;line-height:1}
 .srow .v small{display:block;font-family:"Noto Sans TC",sans-serif;font-weight:400;font-size:12px;color:var(--muted);line-height:1.4;margin-top:3px}
 .bars{background:var(--surface);border-radius:18px;padding:12px 14px 8px}
