@@ -13,7 +13,7 @@
 - **iPhone**：用 Safari 打開 → 分享按鈕 → 「加入主畫面」
 - **Android**：用 Chrome 打開 → 右上角選單 → 「新增至主畫面」
 
-加到主畫面後會用單槓猴子的圖示，打開時是全螢幕、沒有網址列。
+加到主畫面後會用猴子拉單槓的圖示，打開時是全螢幕、沒有網址列。
 iPhone 特別建議這樣做，原因見下面的「已知限制」。
 
 ## 資料存在哪裡
@@ -49,7 +49,8 @@ iPhone 特別建議這樣做，原因見下面的「已知限制」。
 | `sw.js` | Service Worker：每次打開都抓最新版，離線時用上次的版本 |
 | `manifest.webmanifest` | 加到主畫面用的名稱、圖示、顯示方式 |
 | `icons/` | app 圖示（由 `tools/make-icons.js` 產生，不要手改） |
-| `tools/make-icons.js` | 用文字格子畫像素風圖示，輸出各尺寸 PNG：`node tools/make-icons.js` |
+| `tools/make-icons.js` | 把猴臉加上單槓組成圖示，輸出各尺寸 PNG：`node tools/make-icons.js` |
+| `tools/monkey-face.svg` | 圖示用的猴臉（Noto Emoji，授權見 `tools/NOTO-EMOJI-LICENSE.txt`） |
 | `tests/` | Playwright 測試，`serve.js` 是測試用的本機伺服器 |
 | `docs/screenshot.png` | README 用的截圖（假資料） |
 
@@ -73,3 +74,7 @@ push 到 `main`，GitHub Pages 大約一分鐘內會更新。
 
 改了 `app.js` 或 `style.css` 的話，要把 `index.html` 裡兩個 `?v=` 版本號都加 1（例如 `app.js?v=4` → `app.js?v=5`）。
 app 是比對這個版本號來判斷有沒有新版，沒改的話，開著的手機不會跳出「有新版本」的提示。
+
+## 致謝
+
+圖示的猴臉來自 Google 的 [Noto Emoji](https://github.com/googlefonts/noto-emoji)（🐵 U+1F435），採 SIL Open Font License 1.1 授權。
