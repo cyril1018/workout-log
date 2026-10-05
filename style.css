@@ -126,3 +126,4 @@ input[type=file]{font-size:14px;margin-bottom:10px;max-width:100%}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .notice{display:none;background:var(--accent-soft);color:var(--ink);border-radius:14px;padding:10px 14px;font-size:14px;margin-bottom:10px}
 .notice.show{display:block}
+.notice.update{width:100%;text-align:left;font-weight:500}

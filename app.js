@@ -394,6 +394,24 @@
 
   load(); showStorageNotice(); render();
 
+  // ---------- updates & offline (http(s) only; tests on file:// skip this) ----------
+  if (location.protocol !== 'file:') {
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+    // Phones resume a backgrounded tab without reloading, so look for a newer
+    // deploy whenever the app comes back to the front.
+    const scriptSrc = text => (text.match(/app\.js\?v=[^"]+/) || [''])[0];
+    const mine = scriptSrc(document.querySelector('script[src*="app.js"]').getAttribute('src'));
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState !== 'visible') return;
+      try {
+        const html = await (await fetch('index.html', { cache: 'no-store' })).text();
+        const latest = scriptSrc(html);
+        if (latest && latest !== mine) $('update').classList.add('show');
+      } catch(e) {}
+    });
+    $('update').onclick = () => location.reload();
+  }
+
   let lastKey = todayKey();
   setInterval(() => { const k = todayKey(); if (k !== lastKey) { lastKey = k; render(); } }, 60000);
 })();
