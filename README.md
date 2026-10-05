@@ -13,6 +13,7 @@
 - **iPhone**：用 Safari 打開 → 分享按鈕 → 「加入主畫面」
 - **Android**：用 Chrome 打開 → 右上角選單 → 「新增至主畫面」
 
+加到主畫面後會用單槓猴子的圖示，打開時是全螢幕、沒有網址列。
 iPhone 特別建議這樣做，原因見下面的「已知限制」。
 
 ## 資料存在哪裡
@@ -46,6 +47,9 @@ iPhone 特別建議這樣做，原因見下面的「已知限制」。
 | `style.css` | 樣式（含深色模式） |
 | `app.js` | 程式邏輯 |
 | `sw.js` | Service Worker：每次打開都抓最新版，離線時用上次的版本 |
+| `manifest.webmanifest` | 加到主畫面用的名稱、圖示、顯示方式 |
+| `icons/` | app 圖示（由 `tools/make-icons.js` 產生，不要手改） |
+| `tools/make-icons.js` | 用文字格子畫像素風圖示，輸出各尺寸 PNG：`node tools/make-icons.js` |
 | `tests/` | Playwright 測試，`serve.js` 是測試用的本機伺服器 |
 | `docs/screenshot.png` | README 用的截圖（假資料） |
 
