@@ -6,7 +6,7 @@
 <title>運動紀錄</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 <div class="wrap">
@@ -33,7 +33,7 @@
         <button data-m="add">加重</button>
         <button data-m="band">拉力帶</button>
       </div>
-      <label class="kg" style="display:none"><input class="num" id="kg" type="number" inputmode="decimal" min="0" max="999" step="0.5" aria-label="公斤">kg</label>
+      <div class="kg" style="display:none"><button data-d="-2.5" aria-label="減 2.5 公斤">−2.5</button><input class="num" id="kg" type="number" inputmode="decimal" min="0" max="999" step="0.5" aria-label="公斤"><span>kg</span><button data-d="2.5" aria-label="加 2.5 公斤">+2.5</button></div>
     </div>
     <div class="quick" id="quick"></div>
     <button class="log" id="log">記一組</button>
@@ -102,7 +102,7 @@
         <button data-m="add">加重</button>
         <button data-m="band">拉力帶</button>
       </div>
-      <label class="kg" style="display:none"><input class="num" id="editKg" type="number" inputmode="decimal" min="0" max="999" step="0.5" aria-label="公斤">kg</label>
+      <div class="kg" style="display:none"><button data-d="-2.5" aria-label="減 2.5 公斤">−2.5</button><input class="num" id="editKg" type="number" inputmode="decimal" min="0" max="999" step="0.5" aria-label="公斤"><span>kg</span><button data-d="2.5" aria-label="加 2.5 公斤">+2.5</button></div>
     </div>
     <div class="actions">
       <button class="danger" id="editDelete">刪除</button>
@@ -152,6 +152,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="app.js?v=3"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>

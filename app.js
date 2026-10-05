@@ -9,6 +9,7 @@
     exercises: DEFAULT_EX.slice(),
     days: {},            // date -> {date, sets:[{id, ex, reps, t, w?}]}
     loads: {},           // exercise -> last load used
+    types: {},           // exercise -> 'weight' for barbell/machine lifts; absent = bodyweight
     ex: null, range: 'week',
     storageOk: true, exportName: '', exportMime: 'application/json',
   };
@@ -35,6 +36,15 @@
   function cleanW(v){ const n = Math.round(Number(v) * 10) / 10; return Number.isFinite(n) ? Math.max(-999, Math.min(999, n)) : 0; }
   function loadLabel(w){ return w > 0 ? '+' + w + 'kg' : w < 0 ? '帶' + (-w) + 'kg' : ''; }
   function makeSet(id, ex, reps, w, t){ const s = { id, ex, reps, t }; if (w) s.w = w; return s; }
+  function isWeight(ex){ return Object.prototype.hasOwnProperty.call(state.types, ex) && state.types[ex] === 'weight'; }
+  // Training volume counts only weight-type lifts: kg × reps.
+  function volume(sets){ return sum(sets.map(s => isWeight(s.ex) && s.w > 0 ? s.w * s.reps : 0)); }
+  function fmtKg(n){ return (Math.round(n * 10) / 10).toLocaleString('en-US'); }
+  function cleanTypes(obj){
+    const out = {};
+    if (obj && typeof obj === 'object') for (const ex in obj) if (obj[ex] === 'weight') out[String(ex).slice(0,20)] = 'weight';
+    return out;
+  }
   function fmtTime(t){ const d = new Date(t); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
   function groupByEx(sets){
     const m = new Map();
@@ -60,12 +70,13 @@
         for (const k in d.days) if (/^\d{4}-\d{2}-\d{2}$/.test(k)) state.days[k] = { date: k, sets: cleanSets(d.days[k].sets) };
       }
       if (d.loads && typeof d.loads === 'object') for (const ex in d.loads) state.loads[ex] = cleanW(d.loads[ex]);
+      state.types = cleanTypes(d.types);
       if (d.lastEx) state.ex = String(d.lastEx);
       if (Number(d.lastReps) > 0) $('reps').value = Math.min(999, Number(d.lastReps));
     } catch(e){ console.error(e); }
   }
   function persist(){
-    const payload = { version: 2, exercises: state.exercises, days: state.days, loads: state.loads, lastEx: state.ex, lastReps: currentReps() };
+    const payload = { version: 3, exercises: state.exercises, types: state.types, days: state.days, loads: state.loads, lastEx: state.ex, lastReps: currentReps() };
     try { localStorage.setItem(KEY, JSON.stringify(payload)); }
     catch(e){ state.storageOk = false; showStorageNotice(); }
   }
@@ -78,7 +89,8 @@
   function render(){
     // Pick the default exercise first: the header and the log button depend on it.
     if (!state.ex || !state.exercises.includes(state.ex)) state.ex = state.exercises[0] || null;
-    mainLoad.set(cleanW(state.loads[state.ex]));
+    const w = cleanW(state.loads[state.ex]);
+    if (isWeight(state.ex)) mainLoad.set(Math.max(0, w), true); else mainLoad.set(w);
     renderHeader(); renderChips(); renderToday(); renderStats(); renderHistory();
   }
   function renderHeader(){
@@ -105,19 +117,29 @@
   function dayRows(container, key){
     const sets = (state.days[key] || {sets:[]}).sets;
     for (const [ex, list] of groupByEx(sets)) {
-      const row = document.createElement('div'); row.className = 'row';
+      const lifted = isWeight(ex);
+      const row = document.createElement('div'); row.className = 'row' + (lifted ? ' lifted' : '');
       const name = document.createElement('div'); name.className = 'ex'; name.textContent = ex;
       const chips = document.createElement('div'); chips.className = 'sets';
       for (const s of list) {
         const el = document.createElement('button');
-        el.className = 'set num'; el.textContent = s.reps;
-        if (s.w) { const sm = document.createElement('small'); sm.textContent = loadLabel(s.w); el.appendChild(sm); }
-        el.setAttribute('aria-label', s.reps + ' 下' + (s.w ? ' ' + loadLabel(s.w) : '') + '，點一下可修改');
+        el.className = 'set num';
+        if (lifted && s.w > 0) {
+          const sm = document.createElement('small'); sm.textContent = 'kg';
+          el.append(String(s.w), sm, '×' + s.reps);
+          el.setAttribute('aria-label', s.w + ' 公斤 ' + s.reps + ' 下，點一下可修改');
+        } else {
+          el.textContent = s.reps;
+          if (s.w) { const sm = document.createElement('small'); sm.textContent = loadLabel(s.w); el.appendChild(sm); }
+          el.setAttribute('aria-label', s.reps + ' 下' + (s.w ? ' ' + loadLabel(s.w) : '') + '，點一下可修改');
+        }
         el.onclick = () => openEdit(key, s.id);
         chips.appendChild(el);
       }
       const tot = document.createElement('div'); tot.className = 'tot num';
-      tot.innerHTML = sum(list.map(s=>s.reps)) + '<small>下 · ' + list.length + ' 組</small>';
+      tot.innerHTML = lifted
+        ? fmtKg(volume(list)) + '<small>kg · ' + list.length + ' 組</small>'
+        : sum(list.map(s=>s.reps)) + '<small>下 · ' + list.length + ' 組</small>';
       row.append(name, chips, tot); container.appendChild(row);
     }
   }
@@ -134,8 +156,8 @@
     for (const k in state.days) {
       if (k < start) continue;
       for (const s of state.days[k].sets) {
-        if (!agg.has(s.ex)) agg.set(s.ex, {total:0, sets:0, days:new Set(), max:0});
-        const a = agg.get(s.ex); a.total += s.reps; a.sets++; a.days.add(k);
+        if (!agg.has(s.ex)) agg.set(s.ex, {total:0, vol:0, sets:0, days:new Set(), max:0});
+        const a = agg.get(s.ex); a.total += s.reps; a.vol += volume([s]); a.sets++; a.days.add(k);
         if (s.w > a.max) a.max = s.w;
       }
     }
@@ -145,12 +167,14 @@
     for (const ex of order) {
       const a = agg.get(ex); if (!a) continue;
       const r = document.createElement('div'); r.className = 'srow';
+      const lifted = isWeight(ex);
       r.innerHTML = '<div class="ex"></div>'
-        + '<div class="v num">' + a.total + '<small>總共下</small></div>'
+        + (lifted ? '<div class="v num">' + fmtKg(a.vol) + '<small>總量 kg</small></div>'
+                  : '<div class="v num">' + a.total + '<small>總共下</small></div>')
         + '<div class="v num">' + a.sets + '<small>組</small></div>'
         + '<div class="v num">' + a.days.size + '<small>天</small></div>';
       r.querySelector('.ex').textContent = ex;
-      if (a.max) { const sm = document.createElement('small'); sm.textContent = '最重 ' + loadLabel(a.max); r.querySelector('.ex').appendChild(sm); }
+      if (a.max) { const sm = document.createElement('small'); sm.textContent = '最重 ' + (lifted ? a.max + 'kg' : loadLabel(a.max)); r.querySelector('.ex').appendChild(sm); }
       box.appendChild(r);
     }
     const b = $('bars'); b.innerHTML = '';
@@ -158,10 +182,16 @@
     b.style.display = '';
     const now = new Date(); const keys = [];
     for (let i = 13; i >= 0; i--) { const d = new Date(now); d.setDate(now.getDate()-i); keys.push(keyOf(d)); }
-    const vals = keys.map(k => sum(((state.days[k]||{sets:[]}).sets).filter(s=>s.ex===state.ex).map(s=>s.reps)));
+    // Weight-type lifts chart daily volume (kg); bodyweight ones chart reps.
+    const lifted = isWeight(state.ex);
+    const unit = lifted ? ' kg' : ' 下';
+    const vals = keys.map(k => {
+      const sets = ((state.days[k]||{sets:[]}).sets).filter(s=>s.ex===state.ex);
+      return lifted ? volume(sets) : sum(sets.map(s=>s.reps));
+    });
     const max = Math.max(1, ...vals);
     const cap = document.createElement('div'); cap.className = 'cap';
-    cap.innerHTML = '<span></span><span>最近 14 天 · 最多一天 ' + max + ' 下</span>';
+    cap.innerHTML = '<span></span><span>最近 14 天 · 最多一天 ' + fmtKg(max) + unit + '</span>';
     cap.firstChild.textContent = state.ex;
     const grid = document.createElement('div'); grid.className = 'barsgrid';
     const labels = document.createElement('div'); labels.className = 'barlabels';
@@ -169,7 +199,7 @@
       const bar = document.createElement('div');
       bar.className = 'bar' + (vals[i] ? '' : ' zero') + (i === 13 ? ' today' : '');
       bar.style.height = vals[i] ? Math.max(6, Math.round(vals[i] / max * 72)) + 'px' : '3px';
-      bar.title = fmtDate(k) + ' ' + vals[i] + ' 下';
+      bar.title = fmtDate(k) + ' ' + fmtKg(vals[i]) + unit;
       grid.appendChild(bar);
       const l = document.createElement('span'); l.textContent = (i % 2 === 1 || i === 13) ? parseKey(k).getDate() : ''; labels.appendChild(l);
     });
@@ -203,21 +233,31 @@
     const sets = ((state.days[key] || {sets:[]}).sets).concat([makeSet(uid(), state.ex, reps, w, Date.now())]);
     saveDay(key, sets);
     const b = $('log'); b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
-    toast(state.ex + ' ' + reps + ' 下' + (w ? '（' + loadLabel(w) + '）' : '') + '，記好了');
+    const what = isWeight(state.ex) && w > 0 ? w + 'kg × ' + reps + ' 下' : reps + ' 下' + (w ? '（' + loadLabel(w) + '）' : '');
+    toast(state.ex + ' ' + what + '，記好了');
   }
   function removeSet(key, id){
     saveDay(key, ((state.days[key] || {sets:[]}).sets).filter(s => s.id !== id));
     toast('刪掉了');
   }
 
-  // ---------- load picker (徒手 / 加重 / 拉力帶), used by the counter and the edit sheet ----------
+  // ---------- load picker (徒手 / 加重 / 拉力帶 + kg with ±2.5), used by the counter and the edit sheet ----------
+  // For weight-type exercises it is fixed to kg only (the 徒手/加重/拉力帶 choice is hidden).
   function loadPicker(root, kgInput, onChange){
     let mode = 'body';
-    function show(){
+    function show(fixed){
       for (const b of root.querySelectorAll('button[data-m]')) b.classList.toggle('on', b.dataset.m === mode);
+      if (fixed !== undefined) root.querySelector('.seg').style.display = fixed ? 'none' : '';
       kgInput.parentElement.style.display = mode === 'body' ? 'none' : '';
     }
     root.addEventListener('click', e => {
+      const step = e.target.closest('button[data-d]');
+      if (step) {
+        const kg = Math.max(0, Math.abs(cleanW(kgInput.value)) + Number(step.dataset.d));
+        kgInput.value = cleanW(kg) || '';
+        if (onChange) onChange();
+        return;
+      }
       const b = e.target.closest('button[data-m]'); if (!b) return;
       mode = b.dataset.m; show();
       if (mode !== 'body' && !kgInput.value) kgInput.focus();
@@ -227,7 +267,7 @@
     kgInput.addEventListener('focus', () => kgInput.select());
     return {
       get(){ if (mode === 'body') return 0; const kg = Math.abs(cleanW(kgInput.value)); return mode === 'band' ? -kg : kg; },
-      set(w){ mode = w > 0 ? 'add' : w < 0 ? 'band' : 'body'; kgInput.value = w ? Math.abs(w) : ''; show(); },
+      set(w, fixed){ mode = fixed || w > 0 ? 'add' : w < 0 ? 'band' : 'body'; kgInput.value = w ? Math.abs(w) : ''; show(!!fixed); },
     };
   }
   const mainLoad = loadPicker($('load'), $('kg'), () => { if (state.ex) { state.loads[state.ex] = mainLoad.get(); persist(); } });
@@ -240,7 +280,8 @@
     editing = { key, id };
     $('editTitle').textContent = s.ex;
     $('editWhen').textContent = fmtDate(key) + (s.t ? ' ' + fmtTime(s.t) : '');
-    $('editReps').value = s.reps; editLoad.set(s.w || 0);
+    $('editReps').value = s.reps;
+    if (isWeight(s.ex)) editLoad.set(Math.max(0, s.w || 0), true); else editLoad.set(s.w || 0);
     $('editSheet').classList.add('open');
   }
   $('editMinus').onclick = () => { $('editReps').value = Math.max(1, clampReps($('editReps').value)-1); };
@@ -256,27 +297,35 @@
   $('editDelete').onclick = () => { closeSheet('editSheet'); removeSet(editing.key, editing.id); };
 
   // ---------- exercise sheet ----------
-  function exRow(val){
+  function exRow(val, weight){
     const r = document.createElement('div'); r.className = 'exrow';
     const i = document.createElement('input'); i.value = val; i.placeholder = '動作名稱，例如：單槓'; i.maxLength = 20;
+    const t = document.createElement('button'); t.className = 'type';
+    const showType = () => { t.textContent = weight ? '重量' : '自重'; t.classList.toggle('on', weight); t.setAttribute('aria-label', '類型：' + t.textContent + '，點一下切換'); };
+    t.onclick = () => { weight = !weight; showType(); }; showType();
+    r.isWeight = () => weight;
     const x = document.createElement('button'); x.textContent = '×'; x.setAttribute('aria-label','移除'); x.onclick = () => r.remove();
-    r.append(i, x); return r;
+    r.append(i, t, x); return r;
   }
   function openSheet(){
     const list = $('exList'); list.innerHTML = '';
-    for (const ex of state.exercises) list.appendChild(exRow(ex));
-    if (!state.exercises.length) list.appendChild(exRow(''));
+    for (const ex of state.exercises) list.appendChild(exRow(ex, isWeight(ex)));
+    if (!state.exercises.length) list.appendChild(exRow('', false));
     $('sheet').classList.add('open');
     const first = list.querySelector('input'); if (first && !first.value) first.focus();
   }
   function closeSheet(id){ $(id).classList.remove('open'); }
-  $('addRow').onclick = () => { const r = exRow(''); $('exList').appendChild(r); r.querySelector('input').focus(); };
+  $('addRow').onclick = () => { const r = exRow('', false); $('exList').appendChild(r); r.querySelector('input').focus(); };
   $('cancelEx').onclick = () => closeSheet('sheet');
   $('saveEx').onclick = () => {
-    const names = [...$('exList').querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean);
-    const list = [...new Set(names)];
+    const list = [], types = {};
+    for (const r of $('exList').querySelectorAll('.exrow')) {
+      const name = r.querySelector('input').value.trim();
+      if (!name || list.includes(name)) continue;
+      list.push(name); if (r.isWeight()) types[name] = 'weight';
+    }
     if (!list.length) { toast('至少留一個動作'); return; }
-    closeSheet('sheet'); state.exercises = list; persist(); render();
+    closeSheet('sheet'); state.exercises = list; state.types = types; persist(); render();
   };
   for (const id of ['sheet','editSheet','exportSheet','importSheet','clearSheet']) {
     $(id).addEventListener('click', e => { if (e.target === $(id)) closeSheet(id); });
@@ -284,13 +333,13 @@
 
   // ---------- export / import ----------
   function backupJson(){
-    return JSON.stringify({ app: 'workoutlog', version: 2, exportedAt: new Date().toISOString(), exercises: state.exercises, days: state.days }, null, 1);
+    return JSON.stringify({ app: 'workoutlog', version: 3, exportedAt: new Date().toISOString(), exercises: state.exercises, types: state.types, days: state.days }, null, 1);
   }
   function backupCsv(){
     const rows = [['日期','動作','次數','負重','公斤','時間']];
     for (const k of Object.keys(state.days).sort()) {
       for (const s of state.days[k].sets) {
-        const kind = s.w > 0 ? '加重' : s.w < 0 ? '拉力帶' : '徒手';
+        const kind = isWeight(s.ex) && s.w > 0 ? '重量' : s.w > 0 ? '加重' : s.w < 0 ? '拉力帶' : '徒手';
         rows.push([k, s.ex, s.reps, kind, s.w ? Math.abs(s.w) : '', s.t ? fmtTime(s.t) : '']);
       }
     }
@@ -354,6 +403,9 @@
       if (cur.length) state.days[k] = { date: k, sets: cur };
     }
     if (Array.isArray(d.exercises)) state.exercises = [...new Set([...state.exercises, ...d.exercises.map(String).filter(Boolean)])];
+    // Imported types only add; an exercise already set up here keeps its type.
+    const types = cleanTypes(d.types);
+    for (const ex in types) if (!Object.prototype.hasOwnProperty.call(state.types, ex)) state.types[ex] = types[ex];
     persist(); render();
     return added;
   }
@@ -373,7 +425,7 @@
   $('clearAll').onclick = () => $('clearSheet').classList.add('open');
   $('clearCancel').onclick = () => closeSheet('clearSheet');
   $('clearGo').onclick = () => {
-    state.days = {}; state.exercises = DEFAULT_EX.slice(); state.loads = {}; state.ex = null;
+    state.days = {}; state.exercises = DEFAULT_EX.slice(); state.loads = {}; state.types = {}; state.ex = null;
     try { localStorage.removeItem(KEY); } catch(e) {}
     closeSheet('clearSheet'); render(); toast('已清除');
   };
