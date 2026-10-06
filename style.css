@@ -117,6 +117,8 @@ h2{font-size:14px;font-weight:700;color:var(--muted);margin:0 0 8px 2px}
 .panel{background:var(--surface);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));max-height:85%;overflow:auto}
 .panel h3{margin:0 0 10px;font-size:17px}
 .panel p{margin:0 0 10px;color:var(--muted);font-size:14px}
+.when{display:flex;gap:8px;margin:0 0 12px}
+.when input{flex:1;min-width:0;height:42px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);padding:0 10px;font-size:16px;font-family:inherit;color-scheme:light dark}
 .exrow{display:flex;gap:8px;align-items:center;margin-bottom:8px}
 .exrow input{flex:1;height:46px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);padding:0 12px;font-size:16px}
 .exrow button{height:46px;width:46px;border-radius:12px;background:var(--chip);color:var(--muted);font-size:20px}

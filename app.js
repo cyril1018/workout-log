@@ -222,10 +222,10 @@
 
   // ---------- actions ----------
   function setReps(v){ $('reps').value = v; persist(); }
-  function saveDay(key, sets){
+  function setDay(key, sets){
     if (sets.length) state.days[key] = { date: key, sets }; else delete state.days[key];
-    persist(); render();
   }
+  function saveDay(key, sets){ setDay(key, sets); persist(); render(); }
   function addSet(){
     if (!state.ex) return;
     const key = todayKey(); const reps = currentReps(); $('reps').value = reps;
@@ -279,7 +279,8 @@
     const s = (state.days[key] || {sets:[]}).sets.find(x => x.id === id); if (!s) return;
     editing = { key, id };
     $('editTitle').textContent = s.ex;
-    $('editWhen').textContent = fmtDate(key) + (s.t ? ' ' + fmtTime(s.t) : '');
+    $('editDate').value = key; $('editDate').max = todayKey();
+    $('editTime').value = s.t ? fmtTime(s.t) : '';
     $('editReps').value = s.reps;
     if (isWeight(s.ex)) editLoad.set(Math.max(0, s.w || 0), true); else editLoad.set(s.w || 0);
     $('editSheet').classList.add('open');
@@ -290,10 +291,27 @@
   $('editCancel').onclick = () => closeSheet('editSheet');
   $('editSave').onclick = () => {
     const { key, id } = editing; const reps = clampReps($('editReps').value), w = editLoad.get();
-    closeSheet('editSheet');
-    saveDay(key, state.days[key].sets.map(s => s.id === id ? makeSet(s.id, s.ex, reps, w, s.t) : s));
-    toast('改好了');
+    const date = /^\d{4}-\d\d-\d\d$/.test($('editDate').value) ? $('editDate').value : key;
+    if (date > todayKey()) { toast('不能選未來的日期'); return; }
+    const old = state.days[key].sets, s = old.find(x => x.id === id);
+    const time = $('editTime').value;
+    // Untouched time keeps the exact timestamp (seconds and all) so same-minute sets keep their order.
+    const t = time === (s.t ? fmtTime(s.t) : '') ? (s.t ? atTime(date, new Date(s.t)) : undefined)
+      : time ? atTime(date, time) : undefined;
+    const rest = old.filter(x => x.id !== id);
+    const target = date === key ? rest : (state.days[date] || {sets:[]}).sets;
+    if (date !== key) setDay(key, rest);
+    setDay(date, target.concat([makeSet(id, s.ex, reps, w, t)]).sort((a,b) => (a.t||0) - (b.t||0)));
+    closeSheet('editSheet'); persist(); render();
+    toast(date === key ? '改好了' : '改好了，移到 ' + fmtDate(date));
   };
+  // Timestamp on day `key` at `time`: a Date (keeps its h:m:s.ms) or an "HH:MM" string.
+  function atTime(key, time){
+    const d = parseKey(key);
+    if (typeof time === 'string') { const [h, m] = time.split(':').map(Number); d.setHours(h, m); }
+    else d.setHours(time.getHours(), time.getMinutes(), time.getSeconds(), time.getMilliseconds());
+    return d.getTime();
+  }
   $('editDelete').onclick = () => { closeSheet('editSheet'); removeSet(editing.key, editing.id); };
 
   // ---------- exercise sheet ----------

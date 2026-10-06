@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-title" content="運動紀錄">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 <div class="wrap">
@@ -99,7 +99,10 @@
 <div class="sheet" id="editSheet">
   <div class="panel" role="dialog" aria-label="修改這組">
     <h3 id="editTitle">修改這組</h3>
-    <p id="editWhen"></p>
+    <div class="when">
+      <input id="editDate" type="date" aria-label="日期">
+      <input id="editTime" type="time" aria-label="時間">
+    </div>
     <div class="stepper">
       <button class="step" id="editMinus" aria-label="減一下">−</button>
       <input class="num reps" id="editReps" type="number" inputmode="numeric" min="1" max="999" aria-label="這組幾下">
@@ -161,6 +164,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="app.js?v=5"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>
