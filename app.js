@@ -303,7 +303,7 @@
     const t = document.createElement('button'); t.className = 'type';
     const showType = () => { t.textContent = weight ? '重量' : '自重'; t.classList.toggle('on', weight); t.setAttribute('aria-label', '類型：' + t.textContent + '，點一下切換'); };
     t.onclick = () => { weight = !weight; showType(); }; showType();
-    r.isWeight = () => weight;
+    r.isWeight = () => weight; r.orig = val;
     const x = document.createElement('button'); x.textContent = '×'; x.setAttribute('aria-label','移除'); x.onclick = () => r.remove();
     r.append(i, t, x); return r;
   }
@@ -318,15 +318,28 @@
   $('addRow').onclick = () => { const r = exRow('', false); $('exList').appendChild(r); r.querySelector('input').focus(); };
   $('cancelEx').onclick = () => closeSheet('sheet');
   $('saveEx').onclick = () => {
-    const list = [], types = {};
+    const list = [], types = {}, renamed = new Map();
     for (const r of $('exList').querySelectorAll('.exrow')) {
       const name = r.querySelector('input').value.trim();
+      if (r.orig && name && name !== r.orig) renamed.set(r.orig, name);
       if (!name || list.includes(name)) continue;
       list.push(name); if (r.isWeight()) types[name] = 'weight';
     }
     if (!list.length) { toast('至少留一個動作'); return; }
-    closeSheet('sheet'); state.exercises = list; state.types = types; persist(); render();
+    closeSheet('sheet'); state.exercises = list; state.types = types;
+    if (renamed.size) renameSets(renamed);
+    persist(); render();
   };
+  // A renamed exercise keeps its history: move its sets, last load and selection to the new name.
+  // One pass with a map, so swapping two names works too.
+  function renameSets(renamed){
+    for (const k in state.days) for (const s of state.days[k].sets) if (renamed.has(s.ex)) s.ex = renamed.get(s.ex);
+    const loads = {};
+    for (const ex in state.loads) if (!renamed.has(ex)) loads[ex] = state.loads[ex];
+    for (const [from, to] of renamed) if (from in state.loads) loads[to] = state.loads[from];
+    state.loads = loads;
+    if (renamed.has(state.ex)) state.ex = renamed.get(state.ex);
+  }
   for (const id of ['sheet','editSheet','exportSheet','importSheet','clearSheet']) {
     $(id).addEventListener('click', e => { if (e.target === $(id)) closeSheet(id); });
   }
