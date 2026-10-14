@@ -39,7 +39,7 @@
       // stats
       noStats: '這段時間還沒有紀錄。', volL: u => '總量 ' + u, totalReps: '總共下',
       setsL: n => '組', daysL: n => '天', max: x => '最重 ' + x,
-      barsCap: (max, unit) => '最近 14 天 · 最多一天 ' + max + unit, unitW: u => ' ' + u, unitReps: ' 下',
+      barsCap: (max, unit) => '最近 14 天' + (max ? ' · 最多一天 ' + max + unit : ''), unitW: u => ' ' + u, unitReps: ' 下',
       noHistory: '還沒有過去的紀錄。',
       // toasts and messages
       whatW: (w, u, r) => w + u + ' × ' + r + ' 下', whatReps: (r, l) => r + ' 下' + (l ? '（' + l + '）' : ''),
@@ -93,7 +93,7 @@
       setAria: (r, l) => r + plural(r, ' rep', ' reps') + (l ? ' ' + l : '') + ', tap to edit',
       noStats: 'No sets in this period yet.', volL: u => u + ' volume', totalReps: 'reps',
       setsL: n => plural(n, 'set', 'sets'), daysL: n => plural(n, 'day', 'days'), max: x => 'max ' + x,
-      barsCap: (max, unit) => 'Last 14 days · best day ' + max + unit, unitW: u => ' ' + u, unitReps: ' reps',
+      barsCap: (max, unit) => 'Last 14 days' + (max ? ' · best day ' + max + unit : ''), unitW: u => ' ' + u, unitReps: ' reps',
       noHistory: 'No past sets yet.',
       whatW: (w, u, r) => w + u + ' × ' + r, whatReps: (r, l) => r + plural(r, ' rep', ' reps') + (l ? ' (' + l + ')' : ''),
       logged: (ex, what) => ex + ' ' + what + ' — logged',

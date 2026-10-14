@@ -214,9 +214,9 @@
       const sets = ((state.days[k]||{sets:[]}).sets).filter(s=>s.ex===state.ex);
       return lifted ? volume(sets) : sum(sets.map(s=>s.reps));
     });
-    const max = Math.max(1, ...vals);
+    const best = Math.max(...vals), max = Math.max(1, best);
     const cap = document.createElement('div'); cap.className = 'cap';
-    cap.innerHTML = '<span></span><span>' + t('barsCap', fmtNum(max), unit) + '</span>';
+    cap.innerHTML = '<span></span><span>' + t('barsCap', best && fmtNum(best), unit) + '</span>';
     cap.firstChild.textContent = state.ex;
     const grid = document.createElement('div'); grid.className = 'barsgrid';
     const labels = document.createElement('div'); labels.className = 'barlabels';

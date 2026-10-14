@@ -21,6 +21,7 @@ function uiText(page) {
 
 test('手機是英文時，整個介面都是英文，預設動作也是英文', async ({ page }) => {
   await openApp(page);
+  await expect(page.locator('#bars .cap span').last()).toHaveText('Last 14 days');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page).toHaveTitle('Workout Log');
   await expect(page.locator('#chips .chip')).toHaveText(['Pull-ups', 'Push-ups', 'Edit']);

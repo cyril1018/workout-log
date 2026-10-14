@@ -68,6 +68,11 @@ test('統計顯示總量和最重', async ({ page }) => {
   await expect(row.locator('.v').first()).toHaveText('1,210總量 kg');
 });
 
+test('最近 14 天都沒紀錄時，長條圖標題不寫「最多一天」', async ({ page }) => {
+  await openApp(page);
+  await expect(page.locator('#bars .cap span').last()).toHaveText('最近 14 天');
+});
+
 test('長條圖畫的是每天的訓練量', async ({ page }) => {
   await openApp(page, GYM);
   await logSet(page, 100, 10);
