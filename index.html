@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-title" content="運動紀錄">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 <div class="wrap">
@@ -42,7 +42,7 @@
         <button data-m="add" data-i18n="add">加重</button>
         <button data-m="band" data-i18n="band">拉力帶</button>
       </div>
-      <div class="kg" style="display:none"><button data-d="-2.5" data-i18n-aria="kgMinus" aria-label="減 2.5 公斤">−2.5</button><input class="num" id="kg" type="number" inputmode="decimal" min="0" max="999" step="0.5" data-i18n-aria="kg" aria-label="公斤"><span>kg</span><button data-d="2.5" data-i18n-aria="kgPlus" aria-label="加 2.5 公斤">+2.5</button></div>
+      <div class="kg" style="display:none"><button data-d="-2.5" aria-label="減 2.5 公斤">−2.5</button><input class="num" id="kg" type="number" inputmode="decimal" min="0" max="999" step="0.5" aria-label="公斤"><span>kg</span><button data-d="2.5" aria-label="加 2.5 公斤">+2.5</button></div>
     </div>
     <div class="quick" id="quick"></div>
     <button class="log" id="log">記一組</button>
@@ -83,7 +83,10 @@
     </div>
   </section>
 
-  <div class="seg lang" role="group" data-i18n-aria="language" aria-label="語言"><button data-lang="zh">中文</button><button data-lang="en">English</button></div>
+  <div class="prefs">
+    <div class="seg lang" role="group" data-i18n-aria="language" aria-label="語言"><button data-lang="zh">中文</button><button data-lang="en">English</button></div>
+    <div class="seg units" role="group" data-i18n-aria="unitLabel" aria-label="單位"><button data-unit="kg">kg</button><button data-unit="lb">lb</button></div>
+  </div>
 </div>
 
 <div class="sheet" id="sheet">
@@ -116,7 +119,7 @@
         <button data-m="add" data-i18n="add">加重</button>
         <button data-m="band" data-i18n="band">拉力帶</button>
       </div>
-      <div class="kg" style="display:none"><button data-d="-2.5" data-i18n-aria="kgMinus" aria-label="減 2.5 公斤">−2.5</button><input class="num" id="editKg" type="number" inputmode="decimal" min="0" max="999" step="0.5" data-i18n-aria="kg" aria-label="公斤"><span>kg</span><button data-d="2.5" data-i18n-aria="kgPlus" aria-label="加 2.5 公斤">+2.5</button></div>
+      <div class="kg" style="display:none"><button data-d="-2.5" aria-label="減 2.5 公斤">−2.5</button><input class="num" id="editKg" type="number" inputmode="decimal" min="0" max="999" step="0.5" aria-label="公斤"><span>kg</span><button data-d="2.5" aria-label="加 2.5 公斤">+2.5</button></div>
     </div>
     <div class="actions">
       <button class="danger" id="editDelete" data-i18n="del">刪除</button>
@@ -166,7 +169,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="i18n.js?v=8"></script>
-<script src="app.js?v=8"></script>
+<script src="i18n.js?v=9"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>

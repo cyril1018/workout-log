@@ -7,9 +7,10 @@
 
   const state = {
     exercises: defaults(),
-    days: {},            // date -> {date, sets:[{id, ex, reps, t, w?}]}
-    loads: {},           // exercise -> last load used
+    days: {},            // date -> {date, sets:[{id, ex, reps, t, w?, u?}]}
+    loads: {},           // exercise -> last load used, in the current unit
     types: {},           // exercise -> 'weight' for barbell/machine lifts; absent = bodyweight
+    unit: defaultUnit(), // 'kg' or 'lb': how weights are entered and shown
     ex: null, range: 'week',
     storageOk: true, exportName: '', exportMime: 'application/json',
   };
@@ -32,14 +33,23 @@
   function toast(msg){ const el = $('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(()=>el.classList.remove('show'), 1800); }
   function clampReps(raw){ let v = parseInt(raw, 10); if (!v || v < 1) v = 1; if (v > 999) v = 999; return v; }
   function currentReps(){ return clampReps($('reps').value); }
-  // Load is signed kg on the set: w > 0 加重, w < 0 拉力帶, no w = 徒手.
+  // Load is a signed weight on the set: w > 0 加重, w < 0 拉力帶, no w = 徒手.
+  // u: 'lb' if it was entered in pounds (absent = kg). It stays as entered; display converts.
   function cleanW(v){ const n = Math.round(Number(v) * 10) / 10; return Number.isFinite(n) ? Math.max(-999, Math.min(999, n)) : 0; }
-  function loadLabel(w, short){ return w > 0 ? '+' + w + 'kg' : w < 0 ? t(short ? 'bandShort' : 'bandKg', -w) : ''; }
-  function makeSet(id, ex, reps, w, t){ const s = { id, ex, reps, t }; if (w) s.w = w; return s; }
+  function loadLabel(w, short){ const u = state.unit; return w > 0 ? '+' + w + u : w < 0 ? t(short ? 'bandShort' : 'bandW', -w, u) : ''; }
+  function makeSet(id, ex, reps, w, t, u){ const s = { id, ex, reps, t }; if (w) { s.w = w; if (u === 'lb') s.u = 'lb'; } return s; }
+  const LB = 0.45359237;  // kg per pound
+  function defaultUnit(){
+    const nav = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+    return /-US$/i.test(nav) ? 'lb' : 'kg';
+  }
+  function convert(w, from, to){ return from === to ? w : to === 'lb' ? w / LB : w * LB; }
+  // A set's weight in the unit being shown, rounded to 0.1.
+  function shownW(s){ return s.w ? Math.round(convert(s.w, s.u || 'kg', state.unit) * 10) / 10 : 0; }
   function isWeight(ex){ return Object.prototype.hasOwnProperty.call(state.types, ex) && state.types[ex] === 'weight'; }
-  // Training volume counts only weight-type lifts: kg × reps.
-  function volume(sets){ return sum(sets.map(s => isWeight(s.ex) && s.w > 0 ? s.w * s.reps : 0)); }
-  function fmtKg(n){ return (Math.round(n * 10) / 10).toLocaleString('en-US'); }
+  // Training volume counts only weight-type lifts: weight × reps, in the unit being shown.
+  function volume(sets){ return sum(sets.map(s => isWeight(s.ex) && s.w > 0 ? convert(s.w, s.u || 'kg', state.unit) * s.reps : 0)); }
+  function fmtNum(n){ return (Math.round(n * 10) / 10).toLocaleString('en-US'); }
   function cleanTypes(obj){
     const out = {};
     if (obj && typeof obj === 'object') for (const ex in obj) if (obj[ex] === 'weight') out[String(ex).slice(0,20)] = 'weight';
@@ -54,7 +64,7 @@
   function cleanSets(list){
     if (!Array.isArray(list)) return [];
     return list.filter(s => s && s.ex && Number(s.reps) > 0)
-      .map(s => makeSet(String(s.id || uid()), String(s.ex).slice(0,20), Math.min(999, Math.round(Number(s.reps))), cleanW(s.w), Number(s.t) || 0));
+      .map(s => makeSet(String(s.id || uid()), String(s.ex).slice(0,20), Math.min(999, Math.round(Number(s.reps))), cleanW(s.w), Number(s.t) || 0, s.u));
   }
 
   // ---------- storage (this device only) ----------
@@ -71,12 +81,13 @@
       }
       if (d.loads && typeof d.loads === 'object') for (const ex in d.loads) state.loads[ex] = cleanW(d.loads[ex]);
       state.types = cleanTypes(d.types);
+      state.unit = d.unit === 'lb' ? 'lb' : 'kg';  // saved before units existed = kg
       if (d.lastEx) state.ex = String(d.lastEx);
       if (Number(d.lastReps) > 0) $('reps').value = Math.min(999, Number(d.lastReps));
     } catch(e){ console.error(e); }
   }
   function persist(){
-    const payload = { version: 3, exercises: state.exercises, types: state.types, days: state.days, loads: state.loads, lastEx: state.ex, lastReps: currentReps() };
+    const payload = { version: 4, unit: state.unit, exercises: state.exercises, types: state.types, days: state.days, loads: state.loads, lastEx: state.ex, lastReps: currentReps() };
     try { localStorage.setItem(KEY, JSON.stringify(payload)); }
     catch(e){ state.storageOk = false; showStorageNotice(); }
   }
@@ -91,7 +102,19 @@
     if (!state.ex || !state.exercises.includes(state.ex)) state.ex = state.exercises[0] || null;
     const w = cleanW(state.loads[state.ex]);
     if (isWeight(state.ex)) mainLoad.set(Math.max(0, w), true); else mainLoad.set(w);
-    renderHeader(); renderChips(); renderToday(); renderStats(); renderHistory();
+    renderUnit(); renderHeader(); renderChips(); renderToday(); renderStats(); renderHistory();
+  }
+  function renderUnit(){
+    const u = state.unit, step = u === 'lb' ? 5 : 2.5;  // one plate a side
+    for (const b of document.querySelectorAll('.units button')) b.classList.toggle('on', b.dataset.unit === u);
+    for (const root of [$('load'), $('editLoad')]) {
+      root.querySelector('.kg span').textContent = u;
+      root.querySelector('.kg input').setAttribute('aria-label', t('weightAria', u));
+      for (const b of root.querySelectorAll('button[data-d]')) {
+        const d = Number(b.dataset.d) < 0 ? -step : step;
+        b.dataset.d = d; b.textContent = (d < 0 ? '−' : '+') + step; b.setAttribute('aria-label', t('stepAria', d, u));
+      }
+    }
   }
   function renderHeader(){
     const k = todayKey();
@@ -125,21 +148,22 @@
       for (const s of list) {
         const el = document.createElement('button');
         el.className = 'set num';
-        if (lifted && s.w > 0) {
-          const sm = document.createElement('small'); sm.textContent = 'kg';
-          el.append(String(s.w), sm, '×' + s.reps);
-          el.setAttribute('aria-label', t('setAriaKg', s.w, s.reps));
+        const w = shownW(s);
+        if (lifted && w > 0) {
+          const sm = document.createElement('small'); sm.textContent = state.unit;
+          el.append(String(w), sm, '×' + s.reps);
+          el.setAttribute('aria-label', t('setAriaW', w, state.unit, s.reps));
         } else {
           el.textContent = s.reps;
-          if (s.w) { const sm = document.createElement('small'); sm.textContent = loadLabel(s.w, true); el.appendChild(sm); }
-          el.setAttribute('aria-label', t('setAria', s.reps, loadLabel(s.w)));
+          if (w) { const sm = document.createElement('small'); sm.textContent = loadLabel(w, true); el.appendChild(sm); }
+          el.setAttribute('aria-label', t('setAria', s.reps, loadLabel(w)));
         }
         el.onclick = () => openEdit(key, s.id);
         chips.appendChild(el);
       }
       const tot = document.createElement('div'); tot.className = 'tot num';
       tot.innerHTML = lifted
-        ? fmtKg(volume(list)) + '<small>' + t('rowKg', list.length) + '</small>'
+        ? fmtNum(volume(list)) + '<small>' + t('rowVol', list.length, state.unit) + '</small>'
         : sum(list.map(s=>s.reps)) + '<small>' + t('rowReps', list.length) + '</small>';
       row.append(name, chips, tot); container.appendChild(row);
     }
@@ -159,7 +183,7 @@
       for (const s of state.days[k].sets) {
         if (!agg.has(s.ex)) agg.set(s.ex, {total:0, vol:0, sets:0, days:new Set(), max:0});
         const a = agg.get(s.ex); a.total += s.reps; a.vol += volume([s]); a.sets++; a.days.add(k);
-        if (s.w > a.max) a.max = s.w;
+        if (shownW(s) > a.max) a.max = shownW(s);
       }
     }
     const box = $('statRows'); box.innerHTML = '';
@@ -170,12 +194,12 @@
       const r = document.createElement('div'); r.className = 'srow';
       const lifted = isWeight(ex);
       r.innerHTML = '<div class="ex"></div>'
-        + (lifted ? '<div class="v num">' + fmtKg(a.vol) + '<small>' + t('volKg') + '</small></div>'
+        + (lifted ? '<div class="v num">' + fmtNum(a.vol) + '<small>' + t('volL', state.unit) + '</small></div>'
                   : '<div class="v num">' + a.total + '<small>' + t('totalReps') + '</small></div>')
         + '<div class="v num">' + a.sets + '<small>' + t('setsL', a.sets) + '</small></div>'
         + '<div class="v num">' + a.days.size + '<small>' + t('daysL', a.days.size) + '</small></div>';
       r.querySelector('.ex').textContent = ex;
-      if (a.max) { const sm = document.createElement('small'); sm.textContent = t('max', lifted ? a.max + 'kg' : loadLabel(a.max)); r.querySelector('.ex').appendChild(sm); }
+      if (a.max) { const sm = document.createElement('small'); sm.textContent = t('max', lifted ? a.max + state.unit : loadLabel(a.max)); r.querySelector('.ex').appendChild(sm); }
       box.appendChild(r);
     }
     const b = $('bars'); b.innerHTML = '';
@@ -183,16 +207,16 @@
     b.style.display = '';
     const now = new Date(); const keys = [];
     for (let i = 13; i >= 0; i--) { const d = new Date(now); d.setDate(now.getDate()-i); keys.push(keyOf(d)); }
-    // Weight-type lifts chart daily volume (kg); bodyweight ones chart reps.
+    // Weight-type lifts chart daily volume; bodyweight ones chart reps.
     const lifted = isWeight(state.ex);
-    const unit = lifted ? t('unitKg') : t('unitReps');
+    const unit = lifted ? t('unitW', state.unit) : t('unitReps');
     const vals = keys.map(k => {
       const sets = ((state.days[k]||{sets:[]}).sets).filter(s=>s.ex===state.ex);
       return lifted ? volume(sets) : sum(sets.map(s=>s.reps));
     });
     const max = Math.max(1, ...vals);
     const cap = document.createElement('div'); cap.className = 'cap';
-    cap.innerHTML = '<span></span><span>' + t('barsCap', fmtKg(max), unit) + '</span>';
+    cap.innerHTML = '<span></span><span>' + t('barsCap', fmtNum(max), unit) + '</span>';
     cap.firstChild.textContent = state.ex;
     const grid = document.createElement('div'); grid.className = 'barsgrid';
     const labels = document.createElement('div'); labels.className = 'barlabels';
@@ -200,7 +224,7 @@
       const bar = document.createElement('div');
       bar.className = 'bar' + (vals[i] ? '' : ' zero') + (i === 13 ? ' today' : '');
       bar.style.height = vals[i] ? Math.max(6, Math.round(vals[i] / max * 72)) + 'px' : '3px';
-      bar.title = fmtDate(k) + ' ' + fmtKg(vals[i]) + unit;
+      bar.title = fmtDate(k) + ' ' + fmtNum(vals[i]) + unit;
       grid.appendChild(bar);
       const l = document.createElement('span'); l.textContent = (i % 2 === 1 || i === 13) ? parseKey(k).getDate() : ''; labels.appendChild(l);
     });
@@ -231,10 +255,10 @@
     if (!state.ex) return;
     const key = todayKey(); const reps = currentReps(); $('reps').value = reps;
     const w = mainLoad.get(); state.loads[state.ex] = w;
-    const sets = ((state.days[key] || {sets:[]}).sets).concat([makeSet(uid(), state.ex, reps, w, Date.now())]);
+    const sets = ((state.days[key] || {sets:[]}).sets).concat([makeSet(uid(), state.ex, reps, w, Date.now(), state.unit)]);
     saveDay(key, sets);
     const b = $('log'); b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
-    const what = isWeight(state.ex) && w > 0 ? t('whatKg', w, reps) : t('whatReps', reps, loadLabel(w));
+    const what = isWeight(state.ex) && w > 0 ? t('whatW', w, state.unit, reps) : t('whatReps', reps, loadLabel(w));
     toast(t('logged', state.ex, what));
   }
   function removeSet(key, id){
@@ -242,8 +266,8 @@
     toast(t('deleted'));
   }
 
-  // ---------- load picker (徒手 / 加重 / 拉力帶 + kg with ±2.5), used by the counter and the edit sheet ----------
-  // For weight-type exercises it is fixed to kg only (the 徒手/加重/拉力帶 choice is hidden).
+  // ---------- load picker (徒手 / 加重 / 拉力帶 + weight with ± one plate), used by the counter and the edit sheet ----------
+  // For weight-type exercises it is fixed to the weight only (the 徒手/加重/拉力帶 choice is hidden).
   function loadPicker(root, kgInput, onChange){
     let mode = 'body';
     function show(fixed){
@@ -275,7 +299,7 @@
   const editLoad = loadPicker($('editLoad'), $('editKg'));
 
   // ---------- edit sheet ----------
-  let editing = null;  // {key, id} of the set being edited
+  let editing = null;  // {key, id, shown} of the set being edited; shown = weight as first displayed
   function openEdit(key, id){
     const s = (state.days[key] || {sets:[]}).sets.find(x => x.id === id); if (!s) return;
     editing = { key, id };
@@ -283,7 +307,8 @@
     $('editDate').value = key; $('editDate').max = todayKey();
     $('editTime').value = s.t ? fmtTime(s.t) : '';
     $('editReps').value = s.reps;
-    if (isWeight(s.ex)) editLoad.set(Math.max(0, s.w || 0), true); else editLoad.set(s.w || 0);
+    if (isWeight(s.ex)) editLoad.set(Math.max(0, shownW(s)), true); else editLoad.set(shownW(s));
+    editing.shown = editLoad.get();
     $('editSheet').classList.add('open');
   }
   $('editMinus').onclick = () => { $('editReps').value = Math.max(1, clampReps($('editReps').value)-1); };
@@ -302,7 +327,9 @@
     const rest = old.filter(x => x.id !== id);
     const target = date === key ? rest : (state.days[date] || {sets:[]}).sets;
     if (date !== key) setDay(key, rest);
-    setDay(date, target.concat([makeSet(id, s.ex, reps, w, ts)]).sort((a,b) => (a.t||0) - (b.t||0)));
+    // An untouched weight keeps its original number and unit (no kg/lb round-trip drift).
+    const keep = w === editing.shown;
+    setDay(date, target.concat([makeSet(id, s.ex, reps, keep ? s.w : w, ts, keep ? s.u : state.unit)]).sort((a,b) => (a.t||0) - (b.t||0)));
     closeSheet('editSheet'); persist(); render();
     toast(date === key ? t('saved') : t('movedTo', fmtDate(date)));
   };
@@ -365,14 +392,14 @@
 
   // ---------- export / import ----------
   function backupJson(){
-    return JSON.stringify({ app: 'workoutlog', version: 3, exportedAt: new Date().toISOString(), exercises: state.exercises, types: state.types, days: state.days }, null, 1);
+    return JSON.stringify({ app: 'workoutlog', version: 4, exportedAt: new Date().toISOString(), exercises: state.exercises, types: state.types, days: state.days }, null, 1);
   }
   function backupCsv(){
     const rows = [t('csvHead')];
     for (const k of Object.keys(state.days).sort()) {
       for (const s of state.days[k].sets) {
         const kind = t(isWeight(s.ex) && s.w > 0 ? 'kindWeight' : s.w > 0 ? 'kindAdd' : s.w < 0 ? 'kindBand' : 'kindBody');
-        rows.push([k, s.ex, s.reps, kind, s.w ? Math.abs(s.w) : '', s.t ? fmtTime(s.t) : '']);
+        rows.push([k, s.ex, s.reps, kind, s.w ? Math.abs(s.w) : '', s.w ? s.u || 'kg' : '', s.t ? fmtTime(s.t) : '']);
       }
     }
     return '\ufeff' + rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\r\n');
@@ -474,6 +501,12 @@
     state.range = b.dataset.r;
     [...$('seg').children].forEach(x => x.classList.toggle('on', x === b));
     renderStats();
+  });
+  document.querySelector('.units').addEventListener('click', e => {
+    const b = e.target.closest('button[data-unit]'); if (!b || b.dataset.unit === state.unit) return;
+    // Last-used loads are plain numbers in the current unit: convert them, rounded to a half.
+    for (const ex in state.loads) state.loads[ex] = Math.round(convert(state.loads[ex], state.unit, b.dataset.unit) * 2) / 2;
+    state.unit = b.dataset.unit; persist(); render();
   });
   document.querySelector('.lang').addEventListener('click', e => {
     const b = e.target.closest('button[data-lang]'); if (!b || b.dataset.lang === I18N.lang) return;

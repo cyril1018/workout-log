@@ -68,7 +68,7 @@ test('統計會顯示加重動作的最重重量', async ({ page }) => {
   await expect(page.locator('#statRows .srow').first()).toContainText('最重 +12.5kg');
 });
 
-test('CSV 有負重和公斤欄位', async ({ page }) => {
+test('CSV 有負重、重量和單位欄位', async ({ page }) => {
   await openApp(page);
   await setLoad(page, 'band', 15);
   await page.locator('#log').click();
@@ -76,8 +76,8 @@ test('CSV 有負重和公斤欄位', async ({ page }) => {
   const csv = await page.locator('#exportBox').inputValue();
   // A textarea normalizes line breaks to \n.
   const lines = csv.replace(/^\ufeff/, '').split(/\r?\n/);
-  expect(lines[0]).toBe('"日期","動作","次數","負重","公斤","時間"');
-  expect(lines[1]).toMatch(/^"\d{4}-\d{2}-\d{2}","單槓","8","拉力帶","15","\d\d:\d\d"$/);
+  expect(lines[0]).toBe('"日期","動作","次數","負重","重量","單位","時間"');
+  expect(lines[1]).toMatch(/^"\d{4}-\d{2}-\d{2}","單槓","8","拉力帶","15","kg","\d\d:\d\d"$/);
 });
 
 test('匯出再匯入會保留重量', async ({ page }) => {

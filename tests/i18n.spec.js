@@ -52,14 +52,14 @@ test('記一組後，單位和提示是英文，單複數正確', async ({ page 
   await expect(page.locator('header .sum')).toHaveText('16 reps · 2 sets');
 });
 
-test('拉力帶在組數方塊上寫成短的 −15kg，提示裡寫完整的 band', async ({ page }) => {
+test('拉力帶在組數方塊上寫成短的 −15lb，提示裡寫完整的 band', async ({ page }) => {
   await openApp(page);
   await page.locator('#load button[data-m="band"]').click();
   await page.locator('#kg').fill('15');
   await page.locator('#log').click();
-  await expect(page.locator('#toast')).toHaveText('Pull-ups 8 reps (band 15kg) — logged');
-  await expect(page.locator('#todayDay .set')).toHaveText('8−15kg');
-  await expect(page.locator('#todayDay .set')).toHaveAttribute('aria-label', '8 reps band 15kg, tap to edit');
+  await expect(page.locator('#toast')).toHaveText('Pull-ups 8 reps (band 15lb) — logged');
+  await expect(page.locator('#todayDay .set')).toHaveText('8−15lb');
+  await expect(page.locator('#todayDay .set')).toHaveAttribute('aria-label', '8 reps band 15lb, tap to edit');
 });
 
 test('已經存在的動作名稱不會被翻譯', async ({ page }) => {
@@ -99,8 +99,8 @@ test('英文的 CSV 欄位名稱', async ({ page }) => {
   await page.locator('#exportCsv').click();
   await expect(page.locator('#exportTitle')).toHaveText('Export CSV');
   const lines = (await page.locator('#exportBox').inputValue()).replace(/^\ufeff/, '').split(/\r?\n/);
-  expect(lines[0]).toBe('"Date","Exercise","Reps","Load","kg","Time"');
-  expect(lines[1]).toMatch(/^"\d{4}-\d\d-\d\d","Pull-ups","8","added","5","\d\d:\d\d"$/);
+  expect(lines[0]).toBe('"Date","Exercise","Reps","Load","Weight","Unit","Time"');
+  expect(lines[1]).toMatch(/^"\d{4}-\d\d-\d\d","Pull-ups","8","added","5","lb","\d\d:\d\d"$/);
 });
 
 test('加到主畫面時，名稱是 Workout Log', async ({ page, request }) => {

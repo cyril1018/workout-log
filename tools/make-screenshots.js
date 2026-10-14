@@ -6,20 +6,21 @@ const { pathToFileURL } = require('url');
 
 const URL = pathToFileURL(path.join(__dirname, '..', 'index.html')).href;
 const SHOTS = [
-  // [file, locale, pull-ups, push-ups, a weight-type lift]
-  ['screenshot.png', 'zh-TW', '單槓', '伏地挺身', '深蹲'],
-  ['screenshot-en.png', 'en-US', 'Pull-ups', 'Push-ups', 'Squat'],
+  // [file, locale, pull-ups, push-ups, a weight-type lift, band / added / lift weights in that locale's unit]
+  ['screenshot.png', 'zh-TW', '單槓', '伏地挺身', '深蹲', [15, 5, 80]],
+  ['screenshot-en.png', 'en-US', 'Pull-ups', 'Push-ups', 'Squat', [30, 10, 135]],   // lb
 ];
 
 (async () => {
   const browser = await chromium.launch();
-  for (const [file, locale, pull, push, lift] of SHOTS) {
+  for (const [file, locale, pull, push, lift, [band, added, heavy]] of SHOTS) {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, colorScheme: 'light', locale });
     await page.goto(URL);
-    await page.evaluate(([pull, push, lift]) => {
+    const unit = locale === 'en-US' ? 'lb' : 'kg';
+    await page.evaluate(([pull, push, lift, unit]) => {
       localStorage.clear();
-      localStorage.setItem('workoutlog.v1', JSON.stringify({ version: 3, exercises: [pull, push, lift], types: { [lift]: 'weight' }, days: {} }));
-    }, [pull, push, lift]);
+      localStorage.setItem('workoutlog.v1', JSON.stringify({ version: 4, unit, exercises: [pull, push, lift], types: { [lift]: 'weight' }, days: {} }));
+    }, [pull, push, lift, unit]);
     await page.reload();
     const log = async (ex, reps, mode, kg) => {
       await page.click(`#chips .chip:has-text("${ex}")`);
@@ -28,14 +29,14 @@ const SHOTS = [
       await page.fill('#reps', String(reps));
       await page.click('#log');
     };
-    await log(pull, 8, 'band', 15);
-    await log(pull, 6, 'add', 5);
+    await log(pull, 8, 'band', band);
+    await log(pull, 6, 'add', added);
     await log(push, 20, 'body');
-    await log(lift, 5, null, 80);
-    await log(lift, 5, null, 80);
+    await log(lift, 5, null, heavy);
+    await log(lift, 5, null, heavy);
     await page.click(`#chips .chip:has-text("${pull}")`);
     await page.click('#load button[data-m="add"]');
-    await page.fill('#kg', '5');
+    await page.fill('#kg', String(added));
     await page.fill('#reps', '6');
     await page.evaluate(() => document.activeElement.blur());
     await page.waitForTimeout(2000); // let the toast fade

@@ -29,9 +29,11 @@ Before clearing browser data or switching phones, use "Export backup" at the bot
 ## Features
 
 - **Log a set**: pick an exercise, set the reps, tap the log button
-- **Load**: bodyweight, added weight (+kg) or resistance band (assist kg); each exercise remembers the last one used
+- **Load**: bodyweight, added weight or resistance band (assistance); each exercise remembers the last one used
+- **kg or lb**: US phones start in pounds, everyone else in kilograms; switch at the bottom of the page.
+  Each set keeps the number and unit it was entered in, so nothing drifts; totals and charts convert to the unit shown.
 - **Strength training**: mark an exercise as a "weight" type in the exercise editor and you only enter the weight
-  (with ±2.5 kg buttons). Sets show as `60kg×5`, and stats and the chart switch to training volume
+  (with ±2.5 kg or ±5 lb buttons). Sets show as `60kg×5`, and stats and the chart switch to training volume
   (weight × reps) and heaviest set. Added weight on bodyweight exercises doesn't count towards volume.
 - **Edit / delete**: tap any set (today's or past) to change reps, weight, date and time, or delete it.
   Forgot to log a set? Log it now, then change the date.
@@ -48,7 +50,6 @@ Before clearing browser data or switching phones, use "Export backup" at the bot
   It doesn't apply when the app is opened from the home screen.
 - **No sync between devices**: phone and computer keep separate logs; move data with export / import.
 - **Clearing browser data or using private browsing** loses the log or doesn't save it.
-- Weight is in kilograms only (no pounds).
 
 ## Files
 
