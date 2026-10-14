@@ -1,6 +1,7 @@
 {
   "name": "workout-log",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "test": "playwright test"
   },
