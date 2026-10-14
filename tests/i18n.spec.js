@@ -52,6 +52,16 @@ test('記一組後，單位和提示是英文，單複數正確', async ({ page 
   await expect(page.locator('header .sum')).toHaveText('16 reps · 2 sets');
 });
 
+test('拉力帶在組數方塊上寫成短的 −15kg，提示裡寫完整的 band', async ({ page }) => {
+  await openApp(page);
+  await page.locator('#load button[data-m="band"]').click();
+  await page.locator('#kg').fill('15');
+  await page.locator('#log').click();
+  await expect(page.locator('#toast')).toHaveText('Pull-ups 8 reps (band 15kg) — logged');
+  await expect(page.locator('#todayDay .set')).toHaveText('8−15kg');
+  await expect(page.locator('#todayDay .set')).toHaveAttribute('aria-label', '8 reps band 15kg, tap to edit');
+});
+
 test('已經存在的動作名稱不會被翻譯', async ({ page }) => {
   await openApp(page, { version: 3, exercises: ['單槓'], days: {} });
   await expect(page.locator('#chips .chip').first()).toHaveText('單槓');

@@ -32,7 +32,7 @@
       repsU: n => '下', setsU: n => ' 組',
       rowKg: n => 'kg · ' + n + ' 組', rowReps: n => '下 · ' + n + ' 組',
       dayHead: (r, s) => '<span class="num">' + r + '</span> 下 · ' + s + ' 組',
-      bandKg: kg => '帶' + kg + 'kg',
+      bandKg: kg => '帶' + kg + 'kg', bandShort: kg => '帶' + kg + 'kg',
       setAriaKg: (w, r) => w + ' 公斤 ' + r + ' 下，點一下可修改',
       setAria: (r, l) => r + ' 下' + (l ? ' ' + l : '') + '，點一下可修改',
       // stats
@@ -85,7 +85,8 @@
       repsU: n => plural(n, ' rep', ' reps'), setsU: n => plural(n, ' set', ' sets'),
       rowKg: n => 'kg · ' + n + plural(n, ' set', ' sets'), rowReps: n => 'reps · ' + n + plural(n, ' set', ' sets'),
       dayHead: (r, s) => '<span class="num">' + r + '</span>' + plural(r, ' rep', ' reps') + ' · ' + s + plural(s, ' set', ' sets'),
-      bandKg: kg => 'band ' + kg + 'kg',
+      // On the set chips space is tight: assistance shows as negative weight, the usual English convention.
+      bandKg: kg => 'band ' + kg + 'kg', bandShort: kg => '−' + kg + 'kg',
       setAriaKg: (w, r) => w + ' kg × ' + r + plural(r, ' rep', ' reps') + ', tap to edit',
       setAria: (r, l) => r + plural(r, ' rep', ' reps') + (l ? ' ' + l : '') + ', tap to edit',
       noStats: 'No sets in this period yet.', volKg: 'kg volume', totalReps: 'reps',

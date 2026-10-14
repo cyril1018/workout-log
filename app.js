@@ -34,7 +34,7 @@
   function currentReps(){ return clampReps($('reps').value); }
   // Load is signed kg on the set: w > 0 加重, w < 0 拉力帶, no w = 徒手.
   function cleanW(v){ const n = Math.round(Number(v) * 10) / 10; return Number.isFinite(n) ? Math.max(-999, Math.min(999, n)) : 0; }
-  function loadLabel(w){ return w > 0 ? '+' + w + 'kg' : w < 0 ? t('bandKg', -w) : ''; }
+  function loadLabel(w, short){ return w > 0 ? '+' + w + 'kg' : w < 0 ? t(short ? 'bandShort' : 'bandKg', -w) : ''; }
   function makeSet(id, ex, reps, w, t){ const s = { id, ex, reps, t }; if (w) s.w = w; return s; }
   function isWeight(ex){ return Object.prototype.hasOwnProperty.call(state.types, ex) && state.types[ex] === 'weight'; }
   // Training volume counts only weight-type lifts: kg × reps.
@@ -131,7 +131,7 @@
           el.setAttribute('aria-label', t('setAriaKg', s.w, s.reps));
         } else {
           el.textContent = s.reps;
-          if (s.w) { const sm = document.createElement('small'); sm.textContent = loadLabel(s.w); el.appendChild(sm); }
+          if (s.w) { const sm = document.createElement('small'); sm.textContent = loadLabel(s.w, true); el.appendChild(sm); }
           el.setAttribute('aria-label', t('setAria', s.reps, loadLabel(s.w)));
         }
         el.onclick = () => openEdit(key, s.id);

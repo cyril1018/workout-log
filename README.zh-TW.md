@@ -58,7 +58,7 @@ iPhone 特別建議這樣做，原因見下面的「已知限制」。
 | `tools/make-icons.js` | 把猴臉加上單槓組成圖示，輸出各尺寸 PNG：`node tools/make-icons.js` |
 | `tools/monkey-face.svg` | 圖示用的猴臉（Noto Emoji，授權見 `tools/NOTO-EMOJI-LICENSE.txt`） |
 | `tests/` | Playwright 測試，`serve.js` 是測試用的本機伺服器 |
-| `docs/screenshot.png`、`docs/screenshot-en.png` | README 用的截圖（假資料） |
+| `docs/screenshot.png`、`docs/screenshot-en.png` | README 用的截圖（假資料），用 `node tools/make-screenshots.js` 產生 |
 | `LICENSE` | MIT 授權 |
 
 不需要建置工具，以上檔案直接放上 GitHub Pages 就能跑。

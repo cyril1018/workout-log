@@ -64,7 +64,7 @@ Before clearing browser data or switching phones, use "Export backup" at the bot
 | `tools/make-icons.js` | Builds the icon from the monkey face plus a bar, writes every PNG size: `node tools/make-icons.js` |
 | `tools/monkey-face.svg` | Monkey face used in the icon (Noto Emoji, license in `tools/NOTO-EMOJI-LICENSE.txt`) |
 | `tests/` | Playwright tests; `serve.js` is a local server for the tests |
-| `docs/screenshot-en.png`, `docs/screenshot.png` | Screenshots for the READMEs (made-up data) |
+| `docs/screenshot-en.png`, `docs/screenshot.png` | Screenshots for the READMEs (made-up data), taken by `node tools/make-screenshots.js` |
 | `LICENSE` | MIT license |
 
 No build step — these files run as-is on GitHub Pages.
