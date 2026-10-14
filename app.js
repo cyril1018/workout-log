@@ -1,12 +1,12 @@
 (function(){
   const $ = id => document.getElementById(id);
-  const WD = ['日','一','二','三','四','五','六'];
-  const DEFAULT_EX = ['單槓', '伏地挺身'];
+  const t = I18N.t;
+  const defaults = () => t('defaults').slice();
   const QUICK = [5, 8, 10, 12, 15, 20];
   const KEY = 'workoutlog.v1';
 
   const state = {
-    exercises: DEFAULT_EX.slice(),
+    exercises: defaults(),
     days: {},            // date -> {date, sets:[{id, ex, reps, t, w?}]}
     loads: {},           // exercise -> last load used
     types: {},           // exercise -> 'weight' for barbell/machine lifts; absent = bodyweight
@@ -19,7 +19,7 @@
   function keyOf(d){ return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
   function todayKey(){ return keyOf(new Date()); }
   function parseKey(k){ const [y,m,d] = k.split('-').map(Number); return new Date(y, m-1, d); }
-  function fmtDate(k){ const d = parseKey(k); return (d.getMonth()+1) + '月' + d.getDate() + '日 週' + WD[d.getDay()]; }
+  function fmtDate(k){ return t('fmtDate', parseKey(k)); }
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
   function sum(arr){ return arr.reduce((a,b)=>a+b,0); }
   function rangeStart(){
@@ -29,12 +29,12 @@
     return '0000-00-00';
   }
   let toastTimer;
-  function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove('show'), 1800); }
+  function toast(msg){ const el = $('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(()=>el.classList.remove('show'), 1800); }
   function clampReps(raw){ let v = parseInt(raw, 10); if (!v || v < 1) v = 1; if (v > 999) v = 999; return v; }
   function currentReps(){ return clampReps($('reps').value); }
   // Load is signed kg on the set: w > 0 加重, w < 0 拉力帶, no w = 徒手.
   function cleanW(v){ const n = Math.round(Number(v) * 10) / 10; return Number.isFinite(n) ? Math.max(-999, Math.min(999, n)) : 0; }
-  function loadLabel(w){ return w > 0 ? '+' + w + 'kg' : w < 0 ? '帶' + (-w) + 'kg' : ''; }
+  function loadLabel(w){ return w > 0 ? '+' + w + 'kg' : w < 0 ? t('bandKg', -w) : ''; }
   function makeSet(id, ex, reps, w, t){ const s = { id, ex, reps, t }; if (w) s.w = w; return s; }
   function isWeight(ex){ return Object.prototype.hasOwnProperty.call(state.types, ex) && state.types[ex] === 'weight'; }
   // Training volume counts only weight-type lifts: kg × reps.
@@ -82,7 +82,7 @@
   }
   function showStorageNotice(){
     if (state.storageOk) return;
-    const n = $('notice'); n.textContent = '這個瀏覽器沒辦法儲存（可能是無痕模式）。現在記的東西關掉頁面就會不見。'; n.classList.add('show');
+    const n = $('notice'); n.textContent = t('noStorage'); n.classList.add('show');
   }
 
   // ---------- render ----------
@@ -97,9 +97,10 @@
     const k = todayKey();
     $('todayDate').textContent = fmtDate(k);
     const sets = (state.days[k] || {sets:[]}).sets;
-    $('todayTotal').textContent = sum(sets.map(s=>s.reps));
-    $('todaySets').textContent = sets.length;
-    $('log').textContent = '記一組' + (state.ex ? '　' + state.ex : '');
+    const reps = sum(sets.map(s=>s.reps));
+    $('todayTotal').textContent = reps; $('todayRepsU').textContent = t('repsU', reps);
+    $('todaySets').textContent = sets.length; $('todaySetsU').textContent = t('setsU', sets.length);
+    $('log').textContent = t('logBtn', state.ex);
     $('log').disabled = !state.ex;
   }
   function renderChips(){
@@ -111,7 +112,7 @@
       c.appendChild(b);
     }
     const add = document.createElement('button');
-    add.className = 'chip add'; add.textContent = state.exercises.length ? '編輯' : '＋ 新增動作';
+    add.className = 'chip add'; add.textContent = state.exercises.length ? t('editEx') : t('addEx');
     add.onclick = openSheet; c.appendChild(add);
   }
   function dayRows(container, key){
@@ -127,19 +128,19 @@
         if (lifted && s.w > 0) {
           const sm = document.createElement('small'); sm.textContent = 'kg';
           el.append(String(s.w), sm, '×' + s.reps);
-          el.setAttribute('aria-label', s.w + ' 公斤 ' + s.reps + ' 下，點一下可修改');
+          el.setAttribute('aria-label', t('setAriaKg', s.w, s.reps));
         } else {
           el.textContent = s.reps;
           if (s.w) { const sm = document.createElement('small'); sm.textContent = loadLabel(s.w); el.appendChild(sm); }
-          el.setAttribute('aria-label', s.reps + ' 下' + (s.w ? ' ' + loadLabel(s.w) : '') + '，點一下可修改');
+          el.setAttribute('aria-label', t('setAria', s.reps, loadLabel(s.w)));
         }
         el.onclick = () => openEdit(key, s.id);
         chips.appendChild(el);
       }
       const tot = document.createElement('div'); tot.className = 'tot num';
       tot.innerHTML = lifted
-        ? fmtKg(volume(list)) + '<small>kg · ' + list.length + ' 組</small>'
-        : sum(list.map(s=>s.reps)) + '<small>下 · ' + list.length + ' 組</small>';
+        ? fmtKg(volume(list)) + '<small>' + t('rowKg', list.length) + '</small>'
+        : sum(list.map(s=>s.reps)) + '<small>' + t('rowReps', list.length) + '</small>';
       row.append(name, chips, tot); container.appendChild(row);
     }
   }
@@ -162,19 +163,19 @@
       }
     }
     const box = $('statRows'); box.innerHTML = '';
-    if (!agg.size) box.innerHTML = '<div class="empty">這段時間還沒有紀錄。</div>';
+    if (!agg.size) box.innerHTML = '<div class="empty">' + t('noStats') + '</div>';
     const order = [...state.exercises, ...[...agg.keys()].filter(e=>!state.exercises.includes(e))];
     for (const ex of order) {
       const a = agg.get(ex); if (!a) continue;
       const r = document.createElement('div'); r.className = 'srow';
       const lifted = isWeight(ex);
       r.innerHTML = '<div class="ex"></div>'
-        + (lifted ? '<div class="v num">' + fmtKg(a.vol) + '<small>總量 kg</small></div>'
-                  : '<div class="v num">' + a.total + '<small>總共下</small></div>')
-        + '<div class="v num">' + a.sets + '<small>組</small></div>'
-        + '<div class="v num">' + a.days.size + '<small>天</small></div>';
+        + (lifted ? '<div class="v num">' + fmtKg(a.vol) + '<small>' + t('volKg') + '</small></div>'
+                  : '<div class="v num">' + a.total + '<small>' + t('totalReps') + '</small></div>')
+        + '<div class="v num">' + a.sets + '<small>' + t('setsL', a.sets) + '</small></div>'
+        + '<div class="v num">' + a.days.size + '<small>' + t('daysL', a.days.size) + '</small></div>';
       r.querySelector('.ex').textContent = ex;
-      if (a.max) { const sm = document.createElement('small'); sm.textContent = '最重 ' + (lifted ? a.max + 'kg' : loadLabel(a.max)); r.querySelector('.ex').appendChild(sm); }
+      if (a.max) { const sm = document.createElement('small'); sm.textContent = t('max', lifted ? a.max + 'kg' : loadLabel(a.max)); r.querySelector('.ex').appendChild(sm); }
       box.appendChild(r);
     }
     const b = $('bars'); b.innerHTML = '';
@@ -184,14 +185,14 @@
     for (let i = 13; i >= 0; i--) { const d = new Date(now); d.setDate(now.getDate()-i); keys.push(keyOf(d)); }
     // Weight-type lifts chart daily volume (kg); bodyweight ones chart reps.
     const lifted = isWeight(state.ex);
-    const unit = lifted ? ' kg' : ' 下';
+    const unit = lifted ? t('unitKg') : t('unitReps');
     const vals = keys.map(k => {
       const sets = ((state.days[k]||{sets:[]}).sets).filter(s=>s.ex===state.ex);
       return lifted ? volume(sets) : sum(sets.map(s=>s.reps));
     });
     const max = Math.max(1, ...vals);
     const cap = document.createElement('div'); cap.className = 'cap';
-    cap.innerHTML = '<span></span><span>最近 14 天 · 最多一天 ' + fmtKg(max) + unit + '</span>';
+    cap.innerHTML = '<span></span><span>' + t('barsCap', fmtKg(max), unit) + '</span>';
     cap.firstChild.textContent = state.ex;
     const grid = document.createElement('div'); grid.className = 'barsgrid';
     const labels = document.createElement('div'); labels.className = 'barlabels';
@@ -209,12 +210,12 @@
     const h = $('history'); h.innerHTML = '';
     const today = todayKey();
     const keys = Object.keys(state.days).filter(k => k !== today && state.days[k].sets.length).sort().reverse();
-    if (!keys.length) { h.innerHTML = '<div class="empty">還沒有過去的紀錄。</div>'; return; }
+    if (!keys.length) { h.innerHTML = '<div class="empty">' + t('noHistory') + '</div>'; return; }
     for (const k of keys) {
       const sets = state.days[k].sets;
       const d = document.createElement('div'); d.className = 'day';
       const head = document.createElement('div'); head.className = 'head';
-      head.innerHTML = '<b></b><span><span class="num">' + sum(sets.map(s=>s.reps)) + '</span> 下 · ' + sets.length + ' 組</span>';
+      head.innerHTML = '<b></b><span>' + t('dayHead', sum(sets.map(s=>s.reps)), sets.length) + '</span>';
       head.querySelector('b').textContent = fmtDate(k);
       d.appendChild(head); dayRows(d, k); h.appendChild(d);
     }
@@ -233,12 +234,12 @@
     const sets = ((state.days[key] || {sets:[]}).sets).concat([makeSet(uid(), state.ex, reps, w, Date.now())]);
     saveDay(key, sets);
     const b = $('log'); b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
-    const what = isWeight(state.ex) && w > 0 ? w + 'kg × ' + reps + ' 下' : reps + ' 下' + (w ? '（' + loadLabel(w) + '）' : '');
-    toast(state.ex + ' ' + what + '，記好了');
+    const what = isWeight(state.ex) && w > 0 ? t('whatKg', w, reps) : t('whatReps', reps, loadLabel(w));
+    toast(t('logged', state.ex, what));
   }
   function removeSet(key, id){
     saveDay(key, ((state.days[key] || {sets:[]}).sets).filter(s => s.id !== id));
-    toast('刪掉了');
+    toast(t('deleted'));
   }
 
   // ---------- load picker (徒手 / 加重 / 拉力帶 + kg with ±2.5), used by the counter and the edit sheet ----------
@@ -292,18 +293,18 @@
   $('editSave').onclick = () => {
     const { key, id } = editing; const reps = clampReps($('editReps').value), w = editLoad.get();
     const date = /^\d{4}-\d\d-\d\d$/.test($('editDate').value) ? $('editDate').value : key;
-    if (date > todayKey()) { toast('不能選未來的日期'); return; }
+    if (date > todayKey()) { toast(t('noFuture')); return; }
     const old = state.days[key].sets, s = old.find(x => x.id === id);
     const time = $('editTime').value;
     // Untouched time keeps the exact timestamp (seconds and all) so same-minute sets keep their order.
-    const t = time === (s.t ? fmtTime(s.t) : '') ? (s.t ? atTime(date, new Date(s.t)) : undefined)
+    const ts = time === (s.t ? fmtTime(s.t) : '') ? (s.t ? atTime(date, new Date(s.t)) : undefined)
       : time ? atTime(date, time) : undefined;
     const rest = old.filter(x => x.id !== id);
     const target = date === key ? rest : (state.days[date] || {sets:[]}).sets;
     if (date !== key) setDay(key, rest);
-    setDay(date, target.concat([makeSet(id, s.ex, reps, w, t)]).sort((a,b) => (a.t||0) - (b.t||0)));
+    setDay(date, target.concat([makeSet(id, s.ex, reps, w, ts)]).sort((a,b) => (a.t||0) - (b.t||0)));
     closeSheet('editSheet'); persist(); render();
-    toast(date === key ? '改好了' : '改好了，移到 ' + fmtDate(date));
+    toast(date === key ? t('saved') : t('movedTo', fmtDate(date)));
   };
   // Timestamp on day `key` at `time`: a Date (keeps its h:m:s.ms) or an "HH:MM" string.
   function atTime(key, time){
@@ -317,13 +318,13 @@
   // ---------- exercise sheet ----------
   function exRow(val, weight){
     const r = document.createElement('div'); r.className = 'exrow';
-    const i = document.createElement('input'); i.value = val; i.placeholder = '動作名稱，例如：單槓'; i.maxLength = 20;
-    const t = document.createElement('button'); t.className = 'type';
-    const showType = () => { t.textContent = weight ? '重量' : '自重'; t.classList.toggle('on', weight); t.setAttribute('aria-label', '類型：' + t.textContent + '，點一下切換'); };
-    t.onclick = () => { weight = !weight; showType(); }; showType();
+    const i = document.createElement('input'); i.value = val; i.placeholder = t('exPh'); i.maxLength = 20;
+    const b = document.createElement('button'); b.className = 'type';
+    const showType = () => { b.textContent = weight ? t('typeWeight') : t('typeBody'); b.classList.toggle('on', weight); b.setAttribute('aria-label', t('typeAria', b.textContent)); };
+    b.onclick = () => { weight = !weight; showType(); }; showType();
     r.isWeight = () => weight; r.orig = val;
-    const x = document.createElement('button'); x.textContent = '×'; x.setAttribute('aria-label','移除'); x.onclick = () => r.remove();
-    r.append(i, t, x); return r;
+    const x = document.createElement('button'); x.textContent = '×'; x.setAttribute('aria-label', t('remove')); x.onclick = () => r.remove();
+    r.append(i, b, x); return r;
   }
   function openSheet(){
     const list = $('exList'); list.innerHTML = '';
@@ -343,7 +344,7 @@
       if (!name || list.includes(name)) continue;
       list.push(name); if (r.isWeight()) types[name] = 'weight';
     }
-    if (!list.length) { toast('至少留一個動作'); return; }
+    if (!list.length) { toast(t('keepOne')); return; }
     closeSheet('sheet'); state.exercises = list; state.types = types;
     if (renamed.size) renameSets(renamed);
     persist(); render();
@@ -367,10 +368,10 @@
     return JSON.stringify({ app: 'workoutlog', version: 3, exportedAt: new Date().toISOString(), exercises: state.exercises, types: state.types, days: state.days }, null, 1);
   }
   function backupCsv(){
-    const rows = [['日期','動作','次數','負重','公斤','時間']];
+    const rows = [t('csvHead')];
     for (const k of Object.keys(state.days).sort()) {
       for (const s of state.days[k].sets) {
-        const kind = isWeight(s.ex) && s.w > 0 ? '重量' : s.w > 0 ? '加重' : s.w < 0 ? '拉力帶' : '徒手';
+        const kind = t(isWeight(s.ex) && s.w > 0 ? 'kindWeight' : s.w > 0 ? 'kindAdd' : s.w < 0 ? 'kindBand' : 'kindBody');
         rows.push([k, s.ex, s.reps, kind, s.w ? Math.abs(s.w) : '', s.t ? fmtTime(s.t) : '']);
       }
     }
@@ -378,8 +379,8 @@
   }
   function openExport(kind){
     const stamp = todayKey();
-    if (kind === 'csv') { state.exportName = '運動紀錄-' + stamp + '.csv'; state.exportMime = 'text/csv'; $('exportBox').value = backupCsv(); $('exportTitle').textContent = '匯出 CSV'; }
-    else { state.exportName = '運動紀錄備份-' + stamp + '.json'; state.exportMime = 'application/json'; $('exportBox').value = backupJson(); $('exportTitle').textContent = '匯出備份'; }
+    if (kind === 'csv') { state.exportName = t('csvName', stamp); state.exportMime = 'text/csv'; $('exportBox').value = backupCsv(); $('exportTitle').textContent = t('exportCsvTitle'); }
+    else { state.exportName = t('jsonName', stamp); state.exportMime = 'application/json'; $('exportBox').value = backupJson(); $('exportTitle').textContent = t('exportJsonTitle'); }
     $('exportShare').style.display = (navigator.share ? '' : 'none');
     $('exportSheet').classList.add('open');
   }
@@ -388,10 +389,10 @@
   $('exportClose').onclick = () => closeSheet('exportSheet');
   $('exportCopy').onclick = async () => {
     const box = $('exportBox');
-    try { await navigator.clipboard.writeText(box.value); toast('複製好了'); return; } catch(e) {}
+    try { await navigator.clipboard.writeText(box.value); toast(t('copied')); return; } catch(e) {}
     box.focus(); box.select();
-    try { if (document.execCommand('copy')) { toast('複製好了'); return; } } catch(e) {}
-    toast('請長按文字框自行複製');
+    try { if (document.execCommand('copy')) { toast(t('copied')); return; } } catch(e) {}
+    toast(t('copyManual'));
   };
   $('exportShare').onclick = async () => {
     const text = $('exportBox').value;
@@ -399,7 +400,7 @@
       const file = new File([text], state.exportName, { type: state.exportMime });
       if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: state.exportName }); return; }
       await navigator.share({ title: state.exportName, text });
-    } catch(e) { if (!(e && e.name === 'AbortError')) toast('這裡不能分享，改用複製或下載'); }
+    } catch(e) { if (!(e && e.name === 'AbortError')) toast(t('noShare')); }
   };
   $('exportDl').onclick = async () => {
     const text = $('exportBox').value;
@@ -407,7 +408,7 @@
     try {
       if (window.claude && typeof window.claude.use === 'function') {
         const dl = await window.claude.use('downloads');
-        if (dl) { await dl.save({ filename: state.exportName, data: text }); toast('已匯出'); return; }
+        if (dl) { await dl.save({ filename: state.exportName, data: text }); toast(t('exported')); return; }
       }
     } catch(e) { if (e && e.code === 'declined') return; }
     try {
@@ -415,14 +416,14 @@
       a.href = URL.createObjectURL(new Blob([text], { type: state.exportMime }));
       a.download = state.exportName; document.body.appendChild(a); a.click();
       setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-      toast('已嘗試下載，沒出現就改用複製');
-    } catch(e) { toast('這裡不能下載，請用複製'); }
+      toast(t('dlTried'));
+    } catch(e) { toast(t('noDl')); }
   };
 
   function mergeBackup(text){
     let d;
-    try { d = JSON.parse(text); } catch(e) { throw new Error('看不懂這個內容，確認是之前匯出的備份'); }
-    if (!d || typeof d !== 'object' || !d.days) throw new Error('這不是運動紀錄的備份檔');
+    try { d = JSON.parse(text); } catch(e) { throw new Error(t('badJson')); }
+    if (!d || typeof d !== 'object' || !d.days) throw new Error(t('notBackup'));
     let added = 0;
     for (const k in d.days) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
@@ -448,17 +449,17 @@
   });
   $('importGo').onclick = () => {
     const text = $('importBox').value.trim();
-    if (!text) { toast('先選檔案或貼上內容'); return; }
-    try { const n = mergeBackup(text); closeSheet('importSheet'); toast('匯入完成，新增了 ' + n + ' 組'); }
+    if (!text) { toast(t('pickFirst')); return; }
+    try { const n = mergeBackup(text); closeSheet('importSheet'); toast(t('imported', n)); }
     catch(e) { toast(e.message); }
   };
 
   $('clearAll').onclick = () => $('clearSheet').classList.add('open');
   $('clearCancel').onclick = () => closeSheet('clearSheet');
   $('clearGo').onclick = () => {
-    state.days = {}; state.exercises = DEFAULT_EX.slice(); state.loads = {}; state.types = {}; state.ex = null;
+    state.days = {}; state.exercises = defaults(); state.loads = {}; state.types = {}; state.ex = null;
     try { localStorage.removeItem(KEY); } catch(e) {}
-    closeSheet('clearSheet'); render(); toast('已清除');
+    closeSheet('clearSheet'); render(); toast(t('cleared'));
   };
 
   // ---------- wiring ----------
@@ -473,6 +474,14 @@
     state.range = b.dataset.r;
     [...$('seg').children].forEach(x => x.classList.toggle('on', x === b));
     renderStats();
+  });
+  document.querySelector('.lang').addEventListener('click', e => {
+    const b = e.target.closest('button[data-lang]'); if (!b || b.dataset.lang === I18N.lang) return;
+    // Before anything is logged, the untouched starter exercises follow the language.
+    const starter = !Object.keys(state.days).length && state.exercises.join('\n') === defaults().join('\n');
+    I18N.setLang(b.dataset.lang);
+    if (starter) { state.exercises = defaults(); state.ex = null; }
+    showStorageNotice(); render();
   });
 
   load(); showStorageNotice(); render();

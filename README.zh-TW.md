@@ -35,6 +35,7 @@ iPhone 特別建議這樣做，原因見下面的「已知限制」。
 - **統計**：本週／本月／全部的總次數（重量類是總量）、組數、天數，以及最近 14 天的長條圖
 - **離線可用**：打開過一次後，沒有網路也能開、也能記
 - **備份**：匯出／匯入 JSON 備份，或匯出 CSV 用試算表看
+- **中文／英文**：跟著手機語言自動切換，也可以在頁面最下面手動切換。自己取的動作名稱不會被翻譯。
 
 ## 已知限制
 
@@ -50,13 +51,14 @@ iPhone 特別建議這樣做，原因見下面的「已知限制」。
 | `index.html` | 畫面結構 |
 | `style.css` | 樣式（含深色模式） |
 | `app.js` | 程式邏輯 |
+| `i18n.js` | 介面的中英文文字，以及判斷要用哪個語言 |
 | `sw.js` | Service Worker：每次打開都抓最新版，離線時用上次的版本 |
-| `manifest.webmanifest` | 加到主畫面用的名稱、圖示、顯示方式 |
+| `manifest.webmanifest`、`manifest.en.webmanifest` | 加到主畫面用的名稱、圖示、顯示方式（中文／英文） |
 | `icons/` | app 圖示（由 `tools/make-icons.js` 產生，不要手改） |
 | `tools/make-icons.js` | 把猴臉加上單槓組成圖示，輸出各尺寸 PNG：`node tools/make-icons.js` |
 | `tools/monkey-face.svg` | 圖示用的猴臉（Noto Emoji，授權見 `tools/NOTO-EMOJI-LICENSE.txt`） |
 | `tests/` | Playwright 測試，`serve.js` 是測試用的本機伺服器 |
-| `docs/screenshot.png` | README 用的截圖（假資料） |
+| `docs/screenshot.png`、`docs/screenshot-en.png` | README 用的截圖（假資料） |
 | `LICENSE` | MIT 授權 |
 
 不需要建置工具，以上檔案直接放上 GitHub Pages 就能跑。
@@ -77,7 +79,7 @@ npm test
 
 push 到 `main`，GitHub Pages 大約一分鐘內會更新。
 
-改了 `app.js` 或 `style.css` 的話，要把 `index.html` 裡兩個 `?v=` 版本號都加 1（例如 `app.js?v=4` → `app.js?v=5`）。
+改了 `app.js`、`i18n.js` 或 `style.css` 的話，要把 `index.html` 裡三個 `?v=` 版本號都加 1（例如 `app.js?v=7` → `app.js?v=8`）。
 app 是比對這個版本號來判斷有沒有新版，沒改的話，開著的手機不會跳出「有新版本」的提示。
 
 ## 致謝

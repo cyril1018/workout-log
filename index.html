@@ -15,155 +15,158 @@
 <meta name="apple-mobile-web-app-title" content="運動紀錄">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 <div class="wrap">
   <header class="top">
     <div class="date" id="todayDate"></div>
-    <div class="sum"><span class="num" id="todayTotal">0</span>下 · <span id="todaySets">0</span> 組</div>
+    <div class="sum"><span class="num" id="todayTotal">0</span><span id="todayRepsU">下</span> · <span id="todaySets">0</span><span id="todaySetsU"> 組</span></div>
   </header>
 
   <div class="notice" id="notice"></div>
-  <button class="notice update" id="update">有新版本，點一下更新</button>
+  <button class="notice update" id="update" data-i18n="update">有新版本，點一下更新</button>
 
   <div class="chips" id="chips"></div>
 
   <section class="counter">
     <div class="stepper">
-      <button class="step" id="minus" aria-label="減一下">−</button>
-      <input class="num reps" id="reps" type="number" inputmode="numeric" min="1" max="999" value="8" aria-label="這組幾下">
-      <button class="step" id="plus" aria-label="加一下">＋</button>
+      <button class="step" id="minus" data-i18n-aria="minus" aria-label="減一下">−</button>
+      <input class="num reps" id="reps" type="number" inputmode="numeric" min="1" max="999" value="8" data-i18n-aria="repsInSet" aria-label="這組幾下">
+      <button class="step" id="plus" data-i18n-aria="plus" aria-label="加一下">＋</button>
     </div>
-    <div class="unit">這組幾下</div>
+    <div class="unit" data-i18n="repsInSet">這組幾下</div>
     <div class="load" id="load">
-      <div class="seg" role="group" aria-label="負重">
-        <button data-m="body" class="on">徒手</button>
-        <button data-m="add">加重</button>
-        <button data-m="band">拉力帶</button>
+      <div class="seg" role="group" data-i18n-aria="load" aria-label="負重">
+        <button data-m="body" class="on" data-i18n="body">徒手</button>
+        <button data-m="add" data-i18n="add">加重</button>
+        <button data-m="band" data-i18n="band">拉力帶</button>
       </div>
-      <div class="kg" style="display:none"><button data-d="-2.5" aria-label="減 2.5 公斤">−2.5</button><input class="num" id="kg" type="number" inputmode="decimal" min="0" max="999" step="0.5" aria-label="公斤"><span>kg</span><button data-d="2.5" aria-label="加 2.5 公斤">+2.5</button></div>
+      <div class="kg" style="display:none"><button data-d="-2.5" data-i18n-aria="kgMinus" aria-label="減 2.5 公斤">−2.5</button><input class="num" id="kg" type="number" inputmode="decimal" min="0" max="999" step="0.5" data-i18n-aria="kg" aria-label="公斤"><span>kg</span><button data-d="2.5" data-i18n-aria="kgPlus" aria-label="加 2.5 公斤">+2.5</button></div>
     </div>
     <div class="quick" id="quick"></div>
     <button class="log" id="log">記一組</button>
   </section>
 
   <section class="block">
-    <h2>今天</h2>
+    <h2 data-i18n="today">今天</h2>
     <div class="day" id="todayDay"></div>
-    <div class="empty" id="todayEmpty" style="display:none">還沒開始，拉一組就會出現在這裡。</div>
+    <div class="empty" id="todayEmpty" style="display:none" data-i18n="todayEmpty">還沒開始，拉一組就會出現在這裡。</div>
   </section>
 
   <section class="block">
-    <h2>統計</h2>
+    <h2 data-i18n="stats">統計</h2>
     <div class="seg" id="seg">
-      <button data-r="week" class="on">本週</button>
-      <button data-r="month">本月</button>
-      <button data-r="all">全部</button>
+      <button data-r="week" class="on" data-i18n="week">本週</button>
+      <button data-r="month" data-i18n="month">本月</button>
+      <button data-r="all" data-i18n="all">全部</button>
     </div>
     <div class="stat" id="statRows"></div>
     <div class="bars" id="bars"></div>
   </section>
 
   <section class="block">
-    <h2>之前</h2>
+    <h2 data-i18n="history">之前</h2>
     <div id="history"></div>
   </section>
 
   <section class="block">
-    <h2>備份</h2>
+    <h2 data-i18n="backup">備份</h2>
     <div class="data">
-      <p>紀錄只存在這支手機的瀏覽器裡。清掉瀏覽器資料或換手機前，先匯出備份。</p>
+      <p data-i18n="backupNote">紀錄只存在這支手機的瀏覽器裡。清掉瀏覽器資料或換手機前，先匯出備份。</p>
       <div class="btns">
-        <button id="exportJson">匯出備份</button>
-        <button id="exportCsv">匯出 CSV</button>
-        <button id="importBtn" class="wide">匯入備份</button>
-        <button id="clearAll" class="wide danger">清除全部紀錄</button>
+        <button id="exportJson" data-i18n="exportJson">匯出備份</button>
+        <button id="exportCsv" data-i18n="exportCsv">匯出 CSV</button>
+        <button id="importBtn" class="wide" data-i18n="importBackup">匯入備份</button>
+        <button id="clearAll" class="wide danger" data-i18n="clearAll">清除全部紀錄</button>
       </div>
     </div>
   </section>
+
+  <div class="seg lang" role="group" data-i18n-aria="language" aria-label="語言"><button data-lang="zh">中文</button><button data-lang="en">English</button></div>
 </div>
 
 <div class="sheet" id="sheet">
-  <div class="panel" role="dialog" aria-label="管理動作">
-    <h3>動作清單</h3>
+  <div class="panel" role="dialog" data-i18n-aria="manageEx" aria-label="管理動作">
+    <h3 data-i18n="exList">動作清單</h3>
     <div id="exList"></div>
-    <button class="ghost" id="addRow">＋ 新增一個動作</button>
+    <button class="ghost" id="addRow" data-i18n="addRow">＋ 新增一個動作</button>
     <div class="actions">
-      <button id="cancelEx">取消</button>
-      <button class="primary" id="saveEx">儲存</button>
+      <button id="cancelEx" data-i18n="cancel">取消</button>
+      <button class="primary" id="saveEx" data-i18n="save">儲存</button>
     </div>
   </div>
 </div>
 
 <div class="sheet" id="editSheet">
-  <div class="panel" role="dialog" aria-label="修改這組">
+  <div class="panel" role="dialog" data-i18n-aria="editSet" aria-label="修改這組">
     <h3 id="editTitle">修改這組</h3>
     <div class="when">
-      <input id="editDate" type="date" aria-label="日期">
-      <input id="editTime" type="time" aria-label="時間">
+      <input id="editDate" type="date" data-i18n-aria="date" aria-label="日期">
+      <input id="editTime" type="time" data-i18n-aria="time" aria-label="時間">
     </div>
     <div class="stepper">
-      <button class="step" id="editMinus" aria-label="減一下">−</button>
-      <input class="num reps" id="editReps" type="number" inputmode="numeric" min="1" max="999" aria-label="這組幾下">
-      <button class="step" id="editPlus" aria-label="加一下">＋</button>
+      <button class="step" id="editMinus" data-i18n-aria="minus" aria-label="減一下">−</button>
+      <input class="num reps" id="editReps" type="number" inputmode="numeric" min="1" max="999" data-i18n-aria="repsInSet" aria-label="這組幾下">
+      <button class="step" id="editPlus" data-i18n-aria="plus" aria-label="加一下">＋</button>
     </div>
     <div class="load" id="editLoad">
-      <div class="seg" role="group" aria-label="負重">
-        <button data-m="body">徒手</button>
-        <button data-m="add">加重</button>
-        <button data-m="band">拉力帶</button>
+      <div class="seg" role="group" data-i18n-aria="load" aria-label="負重">
+        <button data-m="body" data-i18n="body">徒手</button>
+        <button data-m="add" data-i18n="add">加重</button>
+        <button data-m="band" data-i18n="band">拉力帶</button>
       </div>
-      <div class="kg" style="display:none"><button data-d="-2.5" aria-label="減 2.5 公斤">−2.5</button><input class="num" id="editKg" type="number" inputmode="decimal" min="0" max="999" step="0.5" aria-label="公斤"><span>kg</span><button data-d="2.5" aria-label="加 2.5 公斤">+2.5</button></div>
+      <div class="kg" style="display:none"><button data-d="-2.5" data-i18n-aria="kgMinus" aria-label="減 2.5 公斤">−2.5</button><input class="num" id="editKg" type="number" inputmode="decimal" min="0" max="999" step="0.5" data-i18n-aria="kg" aria-label="公斤"><span>kg</span><button data-d="2.5" data-i18n-aria="kgPlus" aria-label="加 2.5 公斤">+2.5</button></div>
     </div>
     <div class="actions">
-      <button class="danger" id="editDelete">刪除</button>
-      <button id="editCancel">取消</button>
-      <button class="primary" id="editSave">儲存</button>
+      <button class="danger" id="editDelete" data-i18n="del">刪除</button>
+      <button id="editCancel" data-i18n="cancel">取消</button>
+      <button class="primary" id="editSave" data-i18n="save">儲存</button>
     </div>
   </div>
 </div>
 
 <div class="sheet" id="exportSheet">
-  <div class="panel" role="dialog" aria-label="匯出">
+  <div class="panel" role="dialog" data-i18n-aria="exportLabel" aria-label="匯出">
     <h3 id="exportTitle">匯出</h3>
-    <p id="exportHint">按「下載檔案」存成檔案。如果沒有出現下載，就按「複製」再貼到記事本或訊息裡。</p>
+    <p id="exportHint" data-i18n="exportHint">按「下載檔案」存成檔案。如果沒有出現下載，就按「複製」再貼到記事本或訊息裡。</p>
     <textarea class="box" id="exportBox" readonly></textarea>
     <div class="actions">
-      <button id="exportCopy">複製</button>
-      <button id="exportShare" style="display:none">分享</button>
-      <button class="primary" id="exportDl">下載檔案</button>
+      <button id="exportCopy" data-i18n="copy">複製</button>
+      <button id="exportShare" style="display:none" data-i18n="share">分享</button>
+      <button class="primary" id="exportDl" data-i18n="download">下載檔案</button>
     </div>
-    <div class="actions"><button id="exportClose">關閉</button></div>
+    <div class="actions"><button id="exportClose" data-i18n="close">關閉</button></div>
   </div>
 </div>
 
 <div class="sheet" id="importSheet">
-  <div class="panel" role="dialog" aria-label="匯入">
-    <h3>匯入備份</h3>
-    <p>選擇之前匯出的備份檔，或把備份內容貼在下面。會跟現有紀錄合併，不會重複。</p>
+  <div class="panel" role="dialog" data-i18n-aria="importLabel" aria-label="匯入">
+    <h3 data-i18n="importBackup">匯入備份</h3>
+    <p data-i18n="importNote">選擇之前匯出的備份檔，或把備份內容貼在下面。會跟現有紀錄合併，不會重複。</p>
     <input type="file" id="importFile" accept=".json,application/json,text/plain">
-    <textarea class="box" id="importBox" placeholder="把備份內容貼在這裡"></textarea>
+    <textarea class="box" id="importBox" data-i18n-ph="importPh" placeholder="把備份內容貼在這裡"></textarea>
     <div class="actions">
-      <button id="importCancel">取消</button>
-      <button class="primary" id="importGo">匯入</button>
+      <button id="importCancel" data-i18n="cancel">取消</button>
+      <button class="primary" id="importGo" data-i18n="importGo">匯入</button>
     </div>
   </div>
 </div>
 
 <div class="sheet" id="clearSheet">
-  <div class="panel" role="dialog" aria-label="清除">
-    <h3>清除全部紀錄？</h3>
-    <p>會把這支手機上的所有紀錄刪掉，動作清單也會回到預設。刪掉就找不回來了，建議先匯出備份。</p>
+  <div class="panel" role="dialog" data-i18n-aria="clearLabel" aria-label="清除">
+    <h3 data-i18n="clearQ">清除全部紀錄？</h3>
+    <p data-i18n="clearNote">會把這支手機上的所有紀錄刪掉，動作清單也會回到預設。刪掉就找不回來了，建議先匯出備份。</p>
     <div class="actions">
-      <button id="clearCancel">取消</button>
-      <button class="danger" id="clearGo">清除</button>
+      <button id="clearCancel" data-i18n="cancel">取消</button>
+      <button class="danger" id="clearGo" data-i18n="clearGo">清除</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<script src="app.js?v=6"></script>
+<script src="i18n.js?v=7"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>
